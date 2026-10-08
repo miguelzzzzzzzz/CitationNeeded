@@ -20,7 +20,7 @@ def chunk_stats(chunks: Sequence[Chunk]) -> dict[str, float | int]:
         "total_tokens": sum(counts),
         "tokens_min": min(counts),
         "tokens_mean": round(float(sizes.mean()), 2),
-        "tokens_p50": float(np.percentile(sizes, 50)),
-        "tokens_p95": float(np.percentile(sizes, 95)),
+        "tokens_p50": round(float(np.percentile(sizes, 50)), 2),
+        "tokens_p95": round(float(np.percentile(sizes, 95)), 2),
         "tokens_max": max(counts),
     }

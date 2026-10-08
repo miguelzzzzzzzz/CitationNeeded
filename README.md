@@ -32,6 +32,18 @@ files -> loaders -> Document(sections, metadata) -> chunkers -> embedder -> vect
 query -> dense + BM25 -> fusion -> reranker -> answer generator (LLM | extractive) -> cited JSON
 ```
 
+## Usage (current milestone)
+
+```bash
+pip install -e .
+rag-engine ingest path/to/docs --out chunks.jsonl --strategy structure --chunk-size 256 --chunk-overlap 32
+```
+
+This loads Markdown, HTML, PDF, and text files, writes one JSON chunk per line
+(text, exact character span, heading path, page, metadata), and prints chunk
+statistics plus any skipped files with the reason. Details:
+[docs/ingestion-and-chunking.md](docs/ingestion-and-chunking.md).
+
 ## Development
 
 ```bash
