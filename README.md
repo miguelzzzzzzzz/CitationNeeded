@@ -1,6 +1,8 @@
-# production-rag-engine
+# Citation Needed
 
-[![CI](https://github.com/miguelzzzzzzzz/production-rag-engine/actions/workflows/ci.yml/badge.svg)](https://github.com/miguelzzzzzzzz/production-rag-engine/actions/workflows/ci.yml)
+A production-style hybrid RAG service that answers with citations to exact source spans.
+
+[![CI](https://github.com/miguelzzzzzzzz/CitationNeeded/actions/workflows/ci.yml/badge.svg)](https://github.com/miguelzzzzzzzz/CitationNeeded/actions/workflows/ci.yml)
 
 A retrieval-augmented generation engine built the way a production team would
 build one: typed, swappable pipeline stages; structure-aware chunking with
@@ -44,6 +46,12 @@ This loads Markdown, HTML, PDF, and text files, writes one JSON chunk per line
 (text, exact character span, heading path, page, metadata), and prints chunk
 statistics plus any skipped files with the reason. Details:
 [docs/ingestion-and-chunking.md](docs/ingestion-and-chunking.md).
+
+## Naming
+
+The repository is called *Citation Needed*. The Python distribution
+(`production-rag-engine`), import package (`rag_engine`), and CLI
+(`rag-engine`) keep their descriptive names.
 
 ## Development
 

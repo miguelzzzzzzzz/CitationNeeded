@@ -1,4 +1,4 @@
-# PROJECT_SPEC: production-rag-engine
+# PROJECT_SPEC: Citation Needed (production-rag-engine)
 
 Status: active, milestone M1 (ingestion and chunking). Last revised: 2026-10-09.
 

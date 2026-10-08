@@ -17,6 +17,12 @@ dependencies = [
     "pypdf>=4.2",
 ]
 
+[project.urls]
+Homepage = "https://github.com/miguelzzzzzzzz/CitationNeeded"
+Repository = "https://github.com/miguelzzzzzzzz/CitationNeeded"
+Issues = "https://github.com/miguelzzzzzzzz/CitationNeeded/issues"
+Changelog = "https://github.com/miguelzzzzzzzz/CitationNeeded/blob/main/CHANGELOG.md"
+
 [project.optional-dependencies]
 dev = [
     "pytest>=8.0",
