@@ -8,9 +8,10 @@ exact source offsets; hybrid dense + BM25 retrieval with reranking; cited,
 schema-validated answers; and a reproducible evaluation harness so every
 design choice is backed by measured retrieval quality and latency.
 
-> **Status:** early development (milestone M1 of 7, see [PLAN.md](PLAN.md)).
-> Ingestion and chunking are being built first. No benchmark results exist
-> yet; none will be shown here until produced by a committed evaluation run.
+> **Status:** early development (see [PLAN.md](PLAN.md)). M1 (ingestion and
+> chunking) is done; M2 (embeddings, vector index, BM25) is in progress.
+> No benchmark results exist yet; none will be shown here until produced by a
+> committed evaluation run.
 
 ## Why this is not "chat with a PDF"
 
