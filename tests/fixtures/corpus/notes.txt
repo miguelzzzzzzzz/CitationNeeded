@@ -1,0 +1,3 @@
+Chunk overlap preserves context that would otherwise be cut at a boundary.
+
+Too much overlap inflates the index and duplicates evidence in the prompt.
