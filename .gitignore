@@ -1,0 +1,33 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+build/
+dist/
+
+# Tooling caches
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+coverage.xml
+htmlcov/
+
+# Local configuration and secrets
+.env
+.env.*
+!.env.example
+
+# Generated artifacts (indexes, downloaded eval data, model caches)
+data/
+artifacts/
+.cache/
+evals/datasets/
+evals/results/*.tmp.json
+
+# Editors / OS
+.idea/
+.vscode/
+.DS_Store
