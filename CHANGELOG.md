@@ -7,9 +7,17 @@ All notable changes to this project are documented here. The format follows
 ## [Unreleased]
 
 ### Changed
+- **Breaking:** document ids are now `sha256("<corpus_id>:<source>")[:16]`. The corpus id is set with `--corpus-id`, `RAG_CORPUS_ID` or `IngestionConfig.corpus_id`, and defaults to the slugified corpus root directory name. Ids no longer change with the ingest root, and they no longer collide across corpora. Chunk files and indexes built before this change must be rebuilt (review MAJOR 2; ADR-0006).
+- **Breaking:** index format 2 stores `documents.jsonl` (the normalized documents that chunk offsets point into). `load_index` rejects format 1 and asks for a rebuild. `save_index` takes the documents as a new argument (review MAJOR 1).
+- **Breaking:** `search --json` prints `{"schema_version": 1, "query", "mode", "rerank", "hits": [...]}` instead of a bare list.
+- Reranking records the base stage's score in `components` and its rank in the new `RetrievedChunk.ranks`, both keyed by stage name. The `base_rank` score key is gone, and nested reranks keep every stage.
 - Renamed the repository to `CitationNeeded` (display title "Citation Needed"). The distribution, import package, and CLI names are unchanged.
 
 ### Added
+- `rag_engine.documents` (`write_documents`, `read_documents`, `verify_chunks`). `rag-engine ingest` writes `<stem>.documents.jsonl` next to the chunks. `index`, `save_index` and `load_index` verify that every chunk's text equals `document.text[start_char:end_char]` and that `content_hash` and `source` match. `load_documents` returns the normalized text behind an index.
+- `provenance()` includes `content_hash` and `page_end`.
+- End-to-end offset-invariant tests: every loader through chunking, save/load, RRF, weighted fusion, rerank and nested rerank.
+- `REVIEW.md` records Chad's review at `84bce05` and how each finding was resolved.
 - Hybrid retrieval (M3): `reciprocal_rank_fusion` (weighted RRF, k = 60 by default) and `weighted_score_fusion` (per-list, per-query min-max normalization), deterministic tie-breaking, and `HybridRetriever`, which queries each retriever for a candidate pool with the same metadata filters. Fused hits record their per-retriever scores in `RetrievedChunk.components`.
 - Reranking (M3): `Reranker` protocol, `CrossEncoderReranker` (fastembed `TextCrossEncoder`, default `Xenova/ms-marco-MiniLM-L-6-v2`, lazy optional import), and `RerankingRetriever` with a candidate budget. Real-model tests are marked `slow`.
 - `rag-engine search` gains `--mode hybrid`, `--fusion rrf|weighted`, `--weight NAME=FLOAT`, `--rrf-k`, `--candidates`, `--rerank`, and `--rerank-model`; human-readable output shows component scores.
@@ -29,6 +37,9 @@ All notable changes to this project are documented here. The format follows
 - GitHub Actions CI: ruff lint + format check, strict mypy, pytest with coverage on Python 3.11 and 3.13.
 
 ### Fixed
+- `Chunk` validates `end_char > start_char` and `len(text) == end_char - start_char`. `Document` validates its `doc_id` and `content_hash`.
+- Fusion weights that are NaN or infinite are rejected.
+- Front-matter keys can no longer shadow `source`, `corpus_id` or `content_hash` in chunk metadata.
 - Index persistence (M2 review): `save_index` refuses embedders whose name is not a reloadable spec and retrievers whose chunk-id sets differ, and removes an old manifest before rewriting; `load_index` validates manifest fields, checks that both halves hold the same chunk ids, accepts the build-time BM25 tokenizer, and passes the manifest dimension to the embedder so lexical search on a fastembed-built index no longer needs fastembed.
 - CLI (M2 review): a missing fastembed install is reported as `error: ...` (exit 2) instead of a traceback; chunking options passed with a chunks `.jsonl` input produce a warning since they have no effect.
 - Chunking overrides on the command line no longer reset `RAG_EMBEDDING_*` (and other non-chunking) settings to defaults.

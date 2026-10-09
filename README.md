@@ -13,7 +13,8 @@ design choice is backed by measured retrieval quality and latency.
 
 > **Status:** early development (see [PLAN.md](PLAN.md)). M1 (ingestion and
 > chunking), M2 (embeddings, vector index, BM25, retrievers, index/search CLI), and
-> M3 (hybrid fusion, cross-encoder reranking) are done; M4 (evaluation) is next.
+> M3 (hybrid fusion, cross-encoder reranking) are done, and all findings of the
+> review at `84bce05` are resolved ([REVIEW.md](REVIEW.md)); M4 (evaluation) is next.
 > No benchmark results exist yet; none will be shown here until produced by a
 > committed evaluation run.
 

@@ -22,3 +22,10 @@ Short-horizon task list. Milestones and acceptance criteria live in `PLAN.md`.
 - [x] `Reranker` protocol, fastembed cross-encoder (`Xenova/ms-marco-MiniLM-L-6-v2`), `RerankingRetriever` with a candidate budget
 - [x] `rag-engine search --mode hybrid --fusion/--weight/--rrf-k/--candidates --rerank`
 - [x] Lexical search on a fastembed-built index works without fastembed installed
+
+## Review of 84bce05 (done, see REVIEW.md)
+- [x] Corpus-scoped document ids (`corpus_id` + relative path) with pinned-id, stability and no-collision tests
+- [x] `documents.jsonl` beside chunk files and in the index; citations verified on build and load; index format 2
+- [x] `content_hash` and `page_end` in provenance; chunk offset validation; NaN/inf weights rejected
+- [x] Per-stage `components`/`ranks` (nested rerank keeps every stage); `schema_version` on `search --json`
+- [x] End-to-end offset-invariant tests across loaders and pipeline stages
