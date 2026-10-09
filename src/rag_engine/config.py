@@ -60,6 +60,18 @@ class IngestionConfig(BaseModel):
     follow_symlinks: bool = False
 
 
+class EmbeddingConfig(BaseModel):
+    """Dense embedding model settings (ADR-0002)."""
+
+    model_config = ConfigDict(frozen=True, extra="forbid")
+
+    model_name: str = "BAAI/bge-small-en-v1.5"
+    batch_size: int = Field(default=32, ge=1, le=1024)
+    query_prefix: str = ""
+    cache_dir: str | None = None
+    threads: int | None = Field(default=None, ge=1)
+
+
 class Settings(BaseModel):
     """Top-level settings object passed through the pipeline."""
 
@@ -67,6 +79,7 @@ class Settings(BaseModel):
 
     ingestion: IngestionConfig = IngestionConfig()
     chunking: ChunkingConfig = ChunkingConfig()
+    embedding: EmbeddingConfig = EmbeddingConfig()
 
     @classmethod
     def from_env(cls, environ: Mapping[str, str] | None = None) -> Settings:
@@ -77,6 +90,7 @@ class Settings(BaseModel):
         env = os.environ if environ is None else environ
         ingestion: dict[str, str] = {}
         chunking: dict[str, str] = {}
+        embedding: dict[str, str] = {}
         mapping = {
             "MAX_FILE_BYTES": (ingestion, "max_file_bytes"),
             "FOLLOW_SYMLINKS": (ingestion, "follow_symlinks"),
@@ -85,15 +99,22 @@ class Settings(BaseModel):
             "CHUNK_OVERLAP": (chunking, "chunk_overlap"),
             "MIN_CHUNK_TOKENS": (chunking, "min_chunk_tokens"),
             "INCLUDE_HEADING_CONTEXT": (chunking, "include_heading_context"),
+            "EMBEDDING_MODEL": (embedding, "model_name"),
+            "EMBEDDING_BATCH_SIZE": (embedding, "batch_size"),
+            "EMBEDDING_QUERY_PREFIX": (embedding, "query_prefix"),
+            "EMBEDDING_CACHE_DIR": (embedding, "cache_dir"),
+            "EMBEDDING_THREADS": (embedding, "threads"),
         }
         for suffix, (target, field) in mapping.items():
             value = env.get(ENV_PREFIX + suffix)
             if value is not None and value.strip() != "":
-                target[field] = value.strip()
+                # keep a query prefix verbatim: instruction prefixes often end in a space
+                target[field] = value if field == "query_prefix" else value.strip()
         try:
             return cls(
                 ingestion=IngestionConfig.model_validate(ingestion),
                 chunking=ChunkingConfig.model_validate(chunking),
+                embedding=EmbeddingConfig.model_validate(embedding),
             )
         except ValidationError as exc:
             raise ValueError(f"invalid RAG_* configuration: {exc}") from exc

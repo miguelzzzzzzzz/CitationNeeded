@@ -58,7 +58,17 @@ The repository is called *Citation Needed*. The Python distribution
 ```bash
 python -m venv .venv && . .venv/bin/activate
 pip install -e ".[dev]"
-ruff check . && ruff format --check . && mypy && pytest
+ruff check . && ruff format --check . && mypy && pytest -m "not slow"
+```
+
+Dense embeddings use [fastembed](https://github.com/qdrant/fastembed) with
+`BAAI/bge-small-en-v1.5` (384 dimensions, CPU ONNX, ~67 MB download on first
+use). It is an optional extra; tests that run the real model are marked
+`slow` and are not part of CI:
+
+```bash
+pip install -e ".[dev,embeddings]"
+pytest -m slow
 ```
 
 Configuration is read from `RAG_*` environment variables; see

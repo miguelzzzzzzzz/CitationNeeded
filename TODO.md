@@ -10,7 +10,7 @@ Short-horizon task list. Milestones and acceptance criteria live in `PLAN.md`.
 
 ## M2 - Indexing and retrieval primitives (in progress)
 - [x] `Embedder` protocol and deterministic hashing embedder
-- [ ] fastembed adapter (`BAAI/bge-small-en-v1.5`) with `slow` tests and batching
+- [x] fastembed adapter (`BAAI/bge-small-en-v1.5`) with `slow` tests and batching
 - [x] `VectorStore` protocol and NumPy exact index (filters, upsert/delete by doc id, save/load)
 - [ ] BM25 index with hand-computed score tests
 - [ ] `Retriever` returning scored chunks with provenance

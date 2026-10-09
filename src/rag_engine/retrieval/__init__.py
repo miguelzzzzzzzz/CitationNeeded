@@ -1,6 +1,7 @@
 """Retrieval primitives: embedders and vector stores."""
 
 from rag_engine.retrieval.embedders import Embedder, HashingEmbedder, l2_normalize
+from rag_engine.retrieval.fastembed_embedder import FastEmbedEmbedder
 from rag_engine.retrieval.vector_store import (
     Filters,
     InMemoryVectorStore,
@@ -11,6 +12,7 @@ from rag_engine.retrieval.vector_store import (
 
 __all__ = [
     "Embedder",
+    "FastEmbedEmbedder",
     "Filters",
     "HashingEmbedder",
     "InMemoryVectorStore",
