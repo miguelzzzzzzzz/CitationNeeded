@@ -305,9 +305,11 @@ def cmd_index(args: argparse.Namespace) -> int:
         print("error: no chunks to index", file=sys.stderr)
         return 1
 
-    dense = DenseRetriever(embedder)
-    lexical = LexicalRetriever()
     try:
+        # Constructing the retriever reads embedder.dimension, which is what
+        # lazily loads the embedding model, so it must stay under this guard.
+        dense = DenseRetriever(embedder)
+        lexical = LexicalRetriever()
         dense.index(loaded.chunks)
         # Reading the dimension materialises the embedding model lazily, so it
         # belongs here: failing before save_index avoids writing a broken index.
