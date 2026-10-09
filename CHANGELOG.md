@@ -26,5 +26,7 @@ All notable changes to this project are documented here. The format follows
 - GitHub Actions CI: ruff lint + format check, strict mypy, pytest with coverage on Python 3.11 and 3.13.
 
 ### Fixed
+- Index persistence (M2 review): `save_index` refuses embedders whose name is not a reloadable spec and retrievers whose chunk-id sets differ, and removes an old manifest before rewriting; `load_index` validates manifest fields, checks that both halves hold the same chunk ids, accepts the build-time BM25 tokenizer, and passes the manifest dimension to the embedder so lexical search on a fastembed-built index no longer needs fastembed.
+- CLI (M2 review): a missing fastembed install is reported as `error: ...` (exit 2) instead of a traceback; chunking options passed with a chunks `.jsonl` input produce a warning since they have no effect.
 - Chunking overrides on the command line no longer reset `RAG_EMBEDDING_*` (and other non-chunking) settings to defaults.
 - Dense retrieval returns no hits for a query whose embedding is all zeros instead of an arbitrary list of zero-score chunks.

@@ -13,6 +13,7 @@ from typing import Any
 import pytest
 
 from rag_engine.cli import _settings_from_args, main
+from rag_engine.retrieval.fastembed_embedder import FastEmbedEmbedder
 
 Capture = pytest.CaptureFixture[str]
 
@@ -170,4 +171,81 @@ def test_fastembed_index_and_search(corpus_dir: Path, tmp_path: Path, capsys: Ca
     assert main(["index", str(corpus_dir), "--out", str(out)]) == 0
     capsys.readouterr()
     hits = search_json(out, capsys, "cross-encoder reranking")
+    assert hits[0]["source"] == "reranking.html"
+
+
+def _raise_import_error(*args: Any, **kwargs: Any) -> Any:
+    """Stand-in for ``FastEmbedEmbedder._load`` when fastembed is unavailable."""
+    raise ImportError("fastembed is not installed")
+
+
+def test_index_chunks_file_warns_chunking_options_are_ignored(
+    corpus_dir: Path, tmp_path: Path, capsys: Capture
+) -> None:
+    chunks_path = tmp_path / "chunks.jsonl"
+    assert main(["ingest", str(corpus_dir), "--out", str(chunks_path)]) == 0
+    capsys.readouterr()
+
+    out = tmp_path / "idx"
+    argv = [
+        "index",
+        str(chunks_path),
+        "--out",
+        str(out),
+        "--embedder",
+        "hashing",
+        "--chunk-size",
+        "64",
+    ]
+    assert main(argv) == 0
+
+    captured = capsys.readouterr()
+    assert "warning: chunking options are ignored when indexing a chunks file" in captured.err
+    summary: dict[str, Any] = json.loads(captured.out)
+    assert summary["chunks"] == 4
+    assert summary["skipped"] == 0
+    assert (out / "index.json").is_file()
+
+
+def test_index_fastembed_unavailable_reports_error_without_traceback(
+    corpus_dir: Path, tmp_path: Path, capsys: Capture, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    monkeypatch.setattr(FastEmbedEmbedder, "_load", _raise_import_error)
+    out = tmp_path / "idx"
+
+    argv = ["index", str(corpus_dir), "--out", str(out), "--embedder", "fastembed"]
+    assert main(argv) == 2
+
+    captured = capsys.readouterr()
+    assert "error: fastembed is not installed" in captured.err
+    assert "Traceback" not in captured.err
+    assert not (out / "index.json").exists()
+
+
+def test_search_dense_needs_fastembed_but_lexical_still_works(
+    corpus_dir: Path, tmp_path: Path, capsys: Capture, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    chunks_path = tmp_path / "chunks.jsonl"
+    assert main(["ingest", str(corpus_dir), "--out", str(chunks_path)]) == 0
+    capsys.readouterr()
+
+    index_dir = tmp_path / "idx"
+    assert main(["index", str(chunks_path), "--out", str(index_dir), "--embedder", "hashing"]) == 0
+    capsys.readouterr()
+
+    manifest_path = index_dir / "index.json"
+    manifest: dict[str, Any] = json.loads(manifest_path.read_text(encoding="utf-8"))
+    assert manifest["dimension"] == 512
+    manifest["embedder"] = "fastembed:BAAI/bge-small-en-v1.5"
+    manifest_path.write_text(json.dumps(manifest, indent=2), encoding="utf-8")
+
+    monkeypatch.setattr(FastEmbedEmbedder, "_load", _raise_import_error)
+
+    dense_argv = ["search", str(index_dir), "alpha", "--mode", "dense", "--json"]
+    assert main(dense_argv) == 2
+    failed = capsys.readouterr()
+    assert "error: fastembed is not installed" in failed.err
+    assert "Traceback" not in failed.err
+
+    hits = search_json(index_dir, capsys, "cross-encoder reranking", "--mode", "lexical")
     assert hits[0]["source"] == "reranking.html"

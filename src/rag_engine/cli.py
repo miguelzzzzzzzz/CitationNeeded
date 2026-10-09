@@ -71,7 +71,10 @@ def _build_parser() -> argparse.ArgumentParser:
     index.add_argument(
         "path",
         type=Path,
-        help="Chunks JSONL file produced by 'ingest', or a file/directory of documents.",
+        help=(
+            "A chunks .jsonl file produced by 'ingest', or a document "
+            "file/directory (.md, .txt, .html, .pdf)."
+        ),
     )
     index.add_argument(
         "--out",
@@ -127,6 +130,18 @@ def _settings_from_args(args: argparse.Namespace) -> Settings:
         # ingestion and embedding sections from the environment intact.
         settings = settings.model_copy(update={"chunking": chunking})
     return settings
+
+
+def _is_chunks_file(path: Path) -> bool:
+    """True for the JSONL files written by ``ingest``; such a file is never raw input."""
+    return path.is_file() and path.suffix == ".jsonl"
+
+
+def _has_chunking_overrides(args: argparse.Namespace) -> bool:
+    """True when any chunking override flag was given on the command line."""
+    return (
+        args.strategy is not None or args.chunk_size is not None or args.chunk_overlap is not None
+    )
 
 
 def cmd_ingest(args: argparse.Namespace) -> int:
@@ -197,7 +212,7 @@ def _load_index_chunks(path: Path, settings: Settings) -> _IndexInput:
     output); anything else goes through the same code path as ``ingest`` so both
     commands chunk documents identically.
     """
-    if path.is_file() and path.suffix == ".jsonl":
+    if _is_chunks_file(path):
         return _IndexInput(chunks=_read_chunks_file(path), documents=None, skipped=0)
     report = ingest_path(path, settings.ingestion)
     if report.skipped:
@@ -221,6 +236,12 @@ def cmd_index(args: argparse.Namespace) -> int:
     if not args.path.exists():
         print(f"error: path does not exist: {args.path}", file=sys.stderr)
         return 2
+    if _is_chunks_file(args.path) and _has_chunking_overrides(args):
+        # Pre-chunked input is indexed verbatim, so the flags have no effect.
+        print(
+            "warning: chunking options are ignored when indexing a chunks file",
+            file=sys.stderr,
+        )
     try:
         embedder = embedder_from_spec(args.embedder, settings.embedding)
     except ValueError as exc:
@@ -237,7 +258,14 @@ def cmd_index(args: argparse.Namespace) -> int:
 
     dense = DenseRetriever(embedder)
     lexical = LexicalRetriever()
-    dense.index(loaded.chunks)
+    try:
+        dense.index(loaded.chunks)
+        # Reading the dimension materialises the embedding model lazily, so it
+        # belongs here: failing before save_index avoids writing a broken index.
+        dimension = embedder.dimension
+    except ImportError as exc:
+        print(f"error: {exc}", file=sys.stderr)
+        return 2
     lexical.index(loaded.chunks)
     save_index(args.out, dense, lexical)
 
@@ -246,7 +274,7 @@ def cmd_index(args: argparse.Namespace) -> int:
         "skipped": loaded.skipped,
         "chunks": len(loaded.chunks),
         "embedder": embedder.name,
-        "dimension": embedder.dimension,
+        "dimension": dimension,
         "index_dir": str(args.out),
     }
     print(json.dumps(summary, indent=2))
@@ -327,7 +355,11 @@ def cmd_search(args: argparse.Namespace) -> int:
         return 2
 
     retriever: Retriever = dense if args.mode == "dense" else lexical
-    hits = retriever.retrieve(args.query, args.top_k, filters or None)
+    try:
+        hits = retriever.retrieve(args.query, args.top_k, filters or None)
+    except ImportError as exc:
+        print(f"error: {exc}", file=sys.stderr)
+        return 2
 
     if args.json:
         print(json.dumps([hit.to_dict() for hit in hits], indent=2))
