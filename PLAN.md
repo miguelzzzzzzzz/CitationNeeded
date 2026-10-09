@@ -5,7 +5,7 @@ Milestones are ordered; each ends with green CI and an updated CHANGELOG.
 | ID | Milestone | Status |
 | --- | --- | --- |
 | M1 | Project infrastructure, ingestion, configurable chunking | done |
-| M2 | Embeddings, vector store, BM25 index, retrieval interface | in progress |
+| M2 | Embeddings, vector store, BM25 index, retrieval interface | done |
 | M3 | Hybrid fusion (RRF / weighted), metadata filters, cross-encoder reranking | planned |
 | M4 | Evaluation harness (SciFact + structured-doc set), benchmark reports | planned |
 | M5 | Answer generation: provider interface, extractive fallback, citations, structured output | planned |

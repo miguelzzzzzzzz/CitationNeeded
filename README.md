@@ -11,7 +11,8 @@ schema-validated answers; and a reproducible evaluation harness so every
 design choice is backed by measured retrieval quality and latency.
 
 > **Status:** early development (see [PLAN.md](PLAN.md)). M1 (ingestion and
-> chunking) is done; M2 (embeddings, vector index, BM25) is in progress.
+> chunking) and M2 (embeddings, vector index, BM25, retrievers, index/search CLI)
+> are done; M3 (hybrid fusion and reranking) is next.
 > No benchmark results exist yet; none will be shown here until produced by a
 > committed evaluation run.
 
@@ -46,6 +47,19 @@ This loads Markdown, HTML, PDF, and text files, writes one JSON chunk per line
 (text, exact character span, heading path, page, metadata), and prints chunk
 statistics plus any skipped files with the reason. Details:
 [docs/ingestion-and-chunking.md](docs/ingestion-and-chunking.md).
+
+Build an index directory (dense vectors + BM25) and query it:
+
+```bash
+rag-engine index path/to/docs --out index/            # or a chunks.jsonl from `ingest`
+rag-engine search index/ "how does reranking work" -k 5            # dense (bge-small)
+rag-engine search index/ "BM25 k1" --mode lexical --filter source=guide.md --json
+```
+
+Each hit carries its rank, score, retriever, and provenance (document and chunk
+id, source file, heading path, page, character span). `--embedder hashing`
+builds a fully offline index for testing. Combining dense and lexical results
+(hybrid fusion) arrives in M3.
 
 ## Naming
 

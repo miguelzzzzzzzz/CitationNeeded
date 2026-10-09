@@ -10,6 +10,7 @@ All notable changes to this project are documented here. The format follows
 - Renamed the repository to `CitationNeeded` (display title "Citation Needed"). The distribution, import package, and CLI names are unchanged.
 
 ### Added
+- `rag-engine index` (documents or an `ingest` chunks JSONL to an index directory; `--embedder` spec) and `rag-engine search` (dense or lexical mode, `-k`, repeatable `KEY=VALUE` filters, `--json`), with end-to-end tests.
 - Retrievers (M2): `Retriever` protocol, `DenseRetriever` (embedder + exact vector index) and `LexicalRetriever` (BM25), both returning `RetrievedChunk` results with rank, score, retriever name, and provenance (doc/chunk id, source, heading path, page, character span). Index directories (`save_index`/`load_index`) hold both indexes plus a manifest naming the embedder, which `embedder_from_spec` rebuilds on load. Hybrid fusion is deferred to M3.
 - `BM25Index` (M2): Okapi BM25 (k1 = 1.2, b = 0.75 by default; non-negative Lucene IDF) over an in-memory inverted index of each chunk's heading context plus body; NFKC + casefold word tokenizer with optional stopwords; document-level upsert/delete that keep document frequencies and average length exact; metadata filters before top-k; insertion-order tie-breaking; JSON save/load that rebuilds postings and detects tokenizer mismatch. Tests check scores against values worked out by hand.
 - `FastEmbedEmbedder` (M2): `BAAI/bge-small-en-v1.5` through fastembed (optional `embeddings` extra, lazy import), bounded batches written into a preallocated float32 matrix, zero rows for empty texts without model calls, explicit L2 normalization, optional query prefix, and checks for vector count, dimension, and NaN/inf output. `EmbeddingConfig` with `RAG_EMBEDDING_*` variables. Real-model tests are marked `slow`.
@@ -23,3 +24,7 @@ All notable changes to this project are documented here. The format follows
 - Project scaffold: `pyproject.toml` (hatchling), MIT license, `.env.example`, `.gitignore`.
 - Validated runtime settings (`rag_engine.config`) loaded from `RAG_*` environment variables.
 - GitHub Actions CI: ruff lint + format check, strict mypy, pytest with coverage on Python 3.11 and 3.13.
+
+### Fixed
+- Chunking overrides on the command line no longer reset `RAG_EMBEDDING_*` (and other non-chunking) settings to defaults.
+- Dense retrieval returns no hits for a query whose embedding is all zeros instead of an arbitrary list of zero-score chunks.
