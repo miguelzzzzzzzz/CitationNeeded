@@ -15,3 +15,10 @@ Short-horizon task list. Milestones and acceptance criteria live in `PLAN.md`.
 - [x] BM25 index with hand-computed score tests
 - [x] `Retriever` returning scored chunks with provenance
 - [x] `rag-engine index` / `rag-engine search` CLI commands
+
+## M3 - Hybrid retrieval and reranking (done)
+- [x] Reciprocal rank fusion and weighted (per-list min-max) score fusion, tests with hand-computed scores
+- [x] `HybridRetriever` passing the same metadata filters to every retriever before ranking
+- [x] `Reranker` protocol, fastembed cross-encoder (`Xenova/ms-marco-MiniLM-L-6-v2`), `RerankingRetriever` with a candidate budget
+- [x] `rag-engine search --mode hybrid --fusion/--weight/--rrf-k/--candidates --rerank`
+- [x] Lexical search on a fastembed-built index works without fastembed installed

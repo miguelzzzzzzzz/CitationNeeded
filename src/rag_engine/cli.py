@@ -5,14 +5,17 @@ Commands:
 * ``ingest PATH --out FILE``: load documents, chunk them, write JSONL, print stats.
 * ``index PATH --out INDEX_DIR``: build the dense and lexical indexes from a
   chunks JSONL file (or by ingesting documents) and save an index directory.
-* ``search INDEX_DIR QUERY``: query a saved index directory in dense or lexical mode.
+* ``search INDEX_DIR QUERY``: query a saved index directory with the dense,
+  lexical, or hybrid retriever, optionally reranking the fused candidates.
 """
 
 from __future__ import annotations
 
 import argparse
 import json
+import math
 import sys
+from collections.abc import Mapping
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
@@ -24,8 +27,12 @@ from rag_engine.config import ChunkingConfig, Settings
 from rag_engine.ingestion import ingest_path
 from rag_engine.models import Chunk
 from rag_engine.retrieval import (
+    CrossEncoderReranker,
     DenseRetriever,
+    FusionMethod,
+    HybridRetriever,
     LexicalRetriever,
+    RerankingRetriever,
     RetrievedChunk,
     Retriever,
     embedder_from_spec,
@@ -94,9 +101,9 @@ def _build_parser() -> argparse.ArgumentParser:
     search.add_argument("query", help="Query text.")
     search.add_argument(
         "--mode",
-        choices=["dense", "lexical"],
+        choices=["dense", "lexical", "hybrid"],
         default="dense",
-        help="Which retriever to query.",
+        help="Which retriever to query; 'hybrid' fuses the dense and lexical results.",
     )
     search.add_argument("-k", "--top-k", type=int, default=5, help="Number of hits to return.")
     search.add_argument(
@@ -105,6 +112,43 @@ def _build_parser() -> argparse.ArgumentParser:
         default=None,
         metavar="KEY=VALUE",
         help="Metadata filter (repeatable; values for 'page' are parsed as int).",
+    )
+    # The fusion defaults are applied after parsing so that an explicit flag can
+    # be distinguished from an omitted one and rejected outside hybrid mode.
+    search.add_argument(
+        "--fusion",
+        choices=["rrf", "weighted"],
+        default=None,
+        help="Hybrid fusion method (default: rrf); requires --mode hybrid.",
+    )
+    search.add_argument(
+        "--rrf-k",
+        type=int,
+        default=None,
+        help="RRF constant k (default: 60); requires --mode hybrid.",
+    )
+    search.add_argument(
+        "--weight",
+        action="append",
+        default=None,
+        metavar="NAME=FLOAT",
+        help="Hybrid weight for 'dense' or 'lexical' (repeatable); requires --mode hybrid.",
+    )
+    search.add_argument(
+        "--candidates",
+        type=int,
+        default=50,
+        help="Candidate pool size for fusion and reranking (default: 50).",
+    )
+    search.add_argument(
+        "--rerank",
+        action="store_true",
+        help="Rerank the retrieved candidates with a cross-encoder.",
+    )
+    search.add_argument(
+        "--rerank-model",
+        default="Xenova/ms-marco-MiniLM-L-6-v2",
+        help="Cross-encoder model used by --rerank.",
     )
     search.add_argument("--json", action="store_true", help="Print hits as JSON.")
     return parser
@@ -311,8 +355,28 @@ def _parse_filters(values: list[str] | None) -> dict[str, Any]:
     return filters
 
 
+def _parse_weight_overrides(values: list[str] | None) -> dict[str, float]:
+    """Parse repeated ``NAME=FLOAT`` flags; the source name must be dense or lexical."""
+    weights: dict[str, float] = {}
+    for raw in values or []:
+        name, separator, value = raw.partition("=")
+        if not separator or name not in {"dense", "lexical"}:
+            raise ValueError(
+                f"invalid weight {raw!r}: expected NAME=FLOAT with NAME in dense|lexical"
+            )
+        try:
+            parsed = float(value)
+        except ValueError as exc:
+            raise ValueError(f"invalid weight {raw!r}: expected a number") from exc
+        # NaN and infinities would poison every fused score, so reject them here.
+        if not math.isfinite(parsed) or parsed < 0:
+            raise ValueError(f"invalid weight {raw!r}: expected a finite value >= 0")
+        weights[name] = parsed
+    return weights
+
+
 def _format_hit(hit: RetrievedChunk) -> str:
-    """One summary line: rank, score, citation location, and chunk id."""
+    """One summary line: rank, score, citation location, components, and chunk id."""
     chunk = hit.chunk
     source = chunk.metadata.get("source")
     location: str = str(source) if source else chunk.doc_id
@@ -320,6 +384,9 @@ def _format_hit(hit: RetrievedChunk) -> str:
         location += " > " + " > ".join(chunk.heading_path)
     if chunk.page is not None:
         location += f" (p. {chunk.page})"
+    if hit.components:
+        rendered = ", ".join(f"{name}={value:.4f}" for name, value in hit.components.items())
+        location += f"  ({rendered})"
     return f"{hit.rank}. {hit.score:.4f}  {location}  [{chunk.chunk_id}]"
 
 
@@ -345,6 +412,23 @@ def cmd_search(args: argparse.Namespace) -> int:
     except ValueError as exc:
         print(f"error: {exc}", file=sys.stderr)
         return 2
+
+    try:
+        if args.candidates < 1:
+            raise ValueError("candidates must be positive")
+        if args.mode != "hybrid" and any(
+            value is not None for value in (args.fusion, args.rrf_k, args.weight)
+        ):
+            raise ValueError("--fusion/--rrf-k/--weight require --mode hybrid")
+        method: FusionMethod | str = args.fusion or "rrf"
+        rrf_k = 60 if args.rrf_k is None else args.rrf_k
+        if rrf_k < 0:
+            raise ValueError("rrf-k must be >= 0")
+        weights: Mapping[str, float] | None = _parse_weight_overrides(args.weight) or None
+    except ValueError as exc:
+        print(f"error: {exc}", file=sys.stderr)
+        return 2
+
     if not args.index_dir.exists():
         print(f"error: index directory does not exist: {args.index_dir}", file=sys.stderr)
         return 2
@@ -354,7 +438,36 @@ def cmd_search(args: argparse.Namespace) -> int:
         print(f"error: {exc}", file=sys.stderr)
         return 2
 
-    retriever: Retriever = dense if args.mode == "dense" else lexical
+    retriever: Retriever
+    if args.mode == "dense":
+        retriever = dense
+    elif args.mode == "lexical":
+        retriever = lexical
+    else:
+        try:
+            retriever = HybridRetriever(
+                [dense, lexical],
+                method=method,
+                weights=weights,
+                rrf_k=rrf_k,
+                candidates=args.candidates,
+            )
+        except ValueError as exc:
+            print(f"error: {exc}", file=sys.stderr)
+            return 2
+    if args.rerank:
+        # The cross-encoder loads lazily on the first retrieve call, so a
+        # missing fastembed surfaces as an ImportError below, like the embedder.
+        retriever = RerankingRetriever(
+            retriever,
+            CrossEncoderReranker(
+                args.rerank_model,
+                cache_dir=settings.embedding.cache_dir,
+                threads=settings.embedding.threads,
+            ),
+            candidates=args.candidates,
+        )
+
     try:
         hits = retriever.retrieve(args.query, args.top_k, filters or None)
     except ImportError as exc:

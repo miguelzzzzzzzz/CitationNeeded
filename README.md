@@ -11,8 +11,8 @@ schema-validated answers; and a reproducible evaluation harness so every
 design choice is backed by measured retrieval quality and latency.
 
 > **Status:** early development (see [PLAN.md](PLAN.md)). M1 (ingestion and
-> chunking) and M2 (embeddings, vector index, BM25, retrievers, index/search CLI)
-> are done; M3 (hybrid fusion and reranking) is next.
+> chunking), M2 (embeddings, vector index, BM25, retrievers, index/search CLI), and
+> M3 (hybrid fusion, cross-encoder reranking) are done; M4 (evaluation) is next.
 > No benchmark results exist yet; none will be shown here until produced by a
 > committed evaluation run.
 
@@ -56,10 +56,22 @@ rag-engine search index/ "how does reranking work" -k 5            # dense (bge-
 rag-engine search index/ "BM25 k1" --mode lexical --filter source=guide.md --json
 ```
 
-Each hit carries its rank, score, retriever, and provenance (document and chunk
-id, source file, heading path, page, character span). `--embedder hashing`
-builds a fully offline index for testing. Combining dense and lexical results
-(hybrid fusion) arrives in M3.
+Hybrid retrieval and reranking:
+
+```bash
+rag-engine search index/ "how does reranking work" --mode hybrid                  # RRF (k=60)
+rag-engine search index/ "BM25 k1" --mode hybrid --fusion weighted --weight lexical=2
+rag-engine search index/ "how does reranking work" --mode hybrid --rerank --candidates 30
+```
+
+Each hit carries its rank, score, retriever, provenance (document and chunk id,
+source file, heading path, page, character span), and the component scores that
+produced it (dense/lexical scores after fusion, first-stage score and rank after
+reranking). Metadata filters are applied inside every retriever before ranking.
+`--rerank` scores at most `--candidates` (query, chunk) pairs with the
+`Xenova/ms-marco-MiniLM-L-6-v2` cross-encoder (~80 MB, CPU). `--embedder hashing`
+builds a fully offline index for testing. Which configuration retrieves best is
+measured in M4; no quality numbers are claimed before then.
 
 ## Naming
 
