@@ -154,7 +154,8 @@ def test_rerank_puts_matching_chunk_first(
     )
     assert hits[0]["retriever"] == "lexical+rerank"
     assert "overlap" in chunk_text(hits[0])
-    assert {"lexical", "base_rank"} <= set(hits[0]["components"])
+    assert set(hits[0]["components"]) == {"lexical"}
+    assert set(hits[0]["ranks"]) == {"lexical"}
 
 
 def test_rerank_reports_missing_fastembed(

@@ -149,20 +149,27 @@ class RerankingRetriever:
                 f"for {len(hits)} candidates"
             )
         pairs = list(zip(hits, scores, strict=True))
-        # Descending reranker score; the explicit base-rank key makes ties
-        # deterministic and independent of the base retriever's list order.
+        # Descending reranker score; the explicit base rank breaks ties
+        # deterministically, independent of the base retriever's list order.
         pairs.sort(key=lambda item: (-item[1], item[0].rank))
-        return [
-            RetrievedChunk(
-                chunk=hit.chunk,
-                score=score,
-                rank=position,
-                retriever=self.name,
-                components={
-                    **hit.components,
-                    self._base.name: hit.score,
-                    "base_rank": float(hit.rank),
-                },
+        stage = self._base.name
+        results: list[RetrievedChunk] = []
+        for position, (hit, score) in enumerate(pairs[:k], start=1):
+            # A stage keeps its own score and rank slot, so reranking a reranker
+            # extends the record instead of clobbering the inner stage's data.
+            if stage in hit.components or stage in hit.ranks:
+                raise ValueError(
+                    f"stage name {stage!r} already recorded for chunk "
+                    f"{hit.chunk.chunk_id!r}; nested stages need distinct names"
+                )
+            results.append(
+                RetrievedChunk(
+                    chunk=hit.chunk,
+                    score=score,
+                    rank=position,
+                    retriever=self.name,
+                    components={**hit.components, stage: hit.score},
+                    ranks={**hit.ranks, stage: hit.rank},
+                )
             )
-            for position, (hit, score) in enumerate(pairs[:k], start=1)
-        ]
+        return results

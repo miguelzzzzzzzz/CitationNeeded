@@ -166,7 +166,8 @@ def test_base_is_asked_for_max_k_candidates_with_same_filters() -> None:
     out = retriever.retrieve("alpha", k=2, filters=filters)
     assert base.calls == [("alpha", 3, filters)]
     assert [(hit.chunk.chunk_id, hit.score, hit.rank) for hit in out] == [("c1", 1.0, 1)]
-    assert out[0].components == {"base": 2.5, "base_rank": 1.0}
+    assert out[0].components == {"base": 2.5}
+    assert out[0].ranks == {"base": 1}
 
     # k above candidates: the base is asked for k hits, and filters are forwarded again.
     retriever.retrieve("alpha", k=10, filters=filters)
@@ -198,7 +199,7 @@ def test_reranking_reorders_and_renumbers_lexical_hits() -> None:
     for hit in results:
         base_hit = rank_by_text[hit.chunk.embedding_text]
         assert hit.components["lexical"] == pytest.approx(base_hit.score)
-        assert hit.components["base_rank"] == float(base_hit.rank)
+        assert hit.ranks == {"lexical": base_hit.rank}
 
     truncated = retriever.retrieve(query, k=2, filters=None)
     assert [hit.chunk.embedding_text for hit in truncated] == list(reversed(texts))[:2]
@@ -281,3 +282,19 @@ def test_real_reranker_puts_the_joint_scoring_passage_first() -> None:
     results = retriever.retrieve("why are cross encoders more accurate than bi-encoders", k=3)
     assert results
     assert results[0].chunk.text == passages[1]
+
+
+def test_rerank_refuses_to_overwrite_an_existing_stage_key() -> None:
+    clashing = RetrievedChunk(
+        chunk=_chunk("c1", "alpha beta"),
+        score=2.5,
+        rank=1,
+        retriever="base",
+        components={"base": 0.1},
+        ranks={"base": 3},
+    )
+    retriever = RerankingRetriever(
+        _RecordingBase([clashing]), _FixedReranker({"alpha beta": 1.0}), candidates=3
+    )
+    with pytest.raises(ValueError, match="already recorded"):
+        retriever.retrieve("alpha", k=1)

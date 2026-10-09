@@ -35,9 +35,17 @@ class RetrievedChunk:
     score: float
     rank: int
     retriever: str
-    # Scores that produced this result (e.g. {"dense": 0.71, "lexical": 3.2} after
-    # fusion, or the first-stage score before reranking). Empty for a single retriever.
+    # Scores that produced this result, keyed by stage name (``retriever.name``),
+    # e.g. {"dense": 0.71, "lexical": 3.2} after fusion. Keys stay unique per
+    # stage because a wrapper's name extends its base's ("hybrid" ->
+    # "hybrid+rerank"), so nesting a stage never overwrites an outer one.
+    # Empty for a single retriever.
     components: Mapping[str, float] = field(default_factory=dict)
+    # 1-based rank this chunk had in each upstream stage, keyed by the same
+    # stage names as ``components`` (e.g. {"dense": 2, "lexical": 1} after
+    # hybrid RRF, or {..., "hybrid": 4} after reranking a hybrid retriever).
+    # Scores live in ``components``; ranks are kept separate here.
+    ranks: Mapping[str, int] = field(default_factory=dict)
 
     def provenance(self) -> dict[str, Any]:
         """Citation fields shared by every retriever's output.
@@ -68,6 +76,8 @@ class RetrievedChunk:
         }
         if self.components:
             payload["components"] = dict(self.components)
+        if self.ranks:
+            payload["ranks"] = dict(self.ranks)
         payload.update(self.provenance())
         if include_text:
             payload["text"] = self.chunk.text

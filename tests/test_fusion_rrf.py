@@ -5,7 +5,7 @@ from __future__ import annotations
 import pytest
 
 from rag_engine.models import Chunk
-from rag_engine.retrieval.fusion import reciprocal_rank_fusion
+from rag_engine.retrieval.fusion import reciprocal_rank_fusion, weighted_score_fusion
 from rag_engine.retrieval.retriever import RetrievedChunk
 
 
@@ -152,7 +152,9 @@ def test_reciprocal_rank_fusion_rejects_unknown_weight_name() -> None:
 def test_reciprocal_rank_fusion_rejects_negative_weight() -> None:
     results = {"dense": [hit("a", 1, 0.9, "dense")]}
 
-    with pytest.raises(ValueError, match=r"weight for 'dense' must be non-negative"):
+    with pytest.raises(
+        ValueError, match=r"weight for 'dense' must be a finite non-negative number"
+    ):
         reciprocal_rank_fusion(results, weights={"dense": -0.5})
 
 
@@ -168,3 +170,12 @@ def test_reciprocal_rank_fusion_rejects_non_positive_top_k() -> None:
 
     with pytest.raises(ValueError, match="top_k must be positive"):
         reciprocal_rank_fusion(results, top_k=0)
+
+
+@pytest.mark.parametrize("bad", [float("nan"), float("inf"), float("-inf")])
+def test_fusion_functions_reject_non_finite_weights(bad: float) -> None:
+    results = {"dense": [hit("a", 1, 0.9, "dense")]}
+    with pytest.raises(ValueError, match="finite non-negative"):
+        reciprocal_rank_fusion(results, weights={"dense": bad})
+    with pytest.raises(ValueError, match="finite non-negative"):
+        weighted_score_fusion(results, weights={"dense": bad})

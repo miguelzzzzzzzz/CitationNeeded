@@ -54,6 +54,7 @@ class _Candidate:
     first_seen: int
     score: float = 0.0
     components: dict[str, float] = field(default_factory=dict)
+    ranks: dict[str, int] = field(default_factory=dict)
 
 
 def _order_key(candidate: _Candidate) -> tuple[float, int, int]:
@@ -85,6 +86,7 @@ class _FusionAccumulator:
             candidate.best_rank = hit.rank
         candidate.score += contribution
         candidate.components[name] = hit.score
+        candidate.ranks[name] = hit.rank
 
     def finalize(self, retriever: str, top_k: int | None) -> list[RetrievedChunk]:
         """Sort, truncate to ``top_k`` and renumber ranks from 1."""
@@ -98,6 +100,7 @@ class _FusionAccumulator:
                 rank=position,
                 retriever=retriever,
                 components=dict(candidate.components),
+                ranks=dict(candidate.ranks),
             )
             for position, candidate in enumerate(ranked, start=1)
         ]
@@ -147,7 +150,7 @@ def _validate_top_k(top_k: int | None) -> None:
 
 
 def _resolve_weights(names: Iterable[str], weights: Mapping[str, float] | None) -> dict[str, float]:
-    """Return a weight per list; unknown names and negative weights are rejected.
+    """Return a weight per list; unknown names, NaN/inf and negative weights are rejected.
 
     Omitted names default to 1.0 so callers can weight a single retriever
     without restating the rest of the configuration.
@@ -161,8 +164,8 @@ def _resolve_weights(names: Iterable[str], weights: Mapping[str, float] | None) 
     resolved: dict[str, float] = {}
     for name in known:
         weight = weights.get(name, 1.0)
-        if weight < 0:
-            raise ValueError(f"weight for {name!r} must be non-negative")
+        if not math.isfinite(weight) or weight < 0:
+            raise ValueError(f"weight for {name!r} must be a finite non-negative number")
         resolved[name] = weight
     return resolved
 
