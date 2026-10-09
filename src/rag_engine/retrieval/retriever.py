@@ -9,8 +9,8 @@ output stable for downstream persistence and answering.
 
 from __future__ import annotations
 
-from collections.abc import Sequence
-from dataclasses import dataclass
+from collections.abc import Mapping, Sequence
+from dataclasses import dataclass, field
 from typing import Any, Protocol
 
 import numpy as np
@@ -35,6 +35,9 @@ class RetrievedChunk:
     score: float
     rank: int
     retriever: str
+    # Scores that produced this result (e.g. {"dense": 0.71, "lexical": 3.2} after
+    # fusion, or the first-stage score before reranking). Empty for a single retriever.
+    components: Mapping[str, float] = field(default_factory=dict)
 
     def provenance(self) -> dict[str, Any]:
         """Citation fields shared by every retriever's output."""
@@ -55,6 +58,8 @@ class RetrievedChunk:
             "score": self.score,
             "retriever": self.retriever,
         }
+        if self.components:
+            payload["components"] = dict(self.components)
         payload.update(self.provenance())
         if include_text:
             payload["text"] = self.chunk.text
