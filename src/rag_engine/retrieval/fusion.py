@@ -21,6 +21,7 @@ distort the configured weights. Chunks absent from a list contribute 0 for it.
 
 from __future__ import annotations
 
+import math
 from collections.abc import Iterable, Mapping, Sequence
 from dataclasses import dataclass, field
 from enum import StrEnum
@@ -115,6 +116,30 @@ def _dedupe(hits: Sequence[RetrievedChunk], name: str) -> list[RetrievedChunk]:
     return unique
 
 
+def _validate_scores(hits: Sequence[RetrievedChunk], name: str) -> None:
+    """Reject NaN/infinite scores before they reach normalization or sorting.
+
+    ``inf - inf`` (min-max span) and ``nan`` comparisons silently produce
+    meaningless aggregates, so such a hit is a caller bug rather than data.
+    """
+    for hit in hits:
+        if not math.isfinite(hit.score):
+            raise ValueError(
+                f"result list {name!r} contains chunk {hit.chunk.chunk_id!r} "
+                f"with a non-finite score: {hit.score!r}"
+            )
+
+
+def _validate_ranks(hits: Sequence[RetrievedChunk], name: str) -> None:
+    """RRF's ``k + rank`` denominator assumes 1-based ranks."""
+    for hit in hits:
+        if hit.rank < 1:
+            raise ValueError(
+                f"result list {name!r} contains chunk {hit.chunk.chunk_id!r} "
+                f"with a rank below 1: {hit.rank!r}"
+            )
+
+
 def _validate_top_k(top_k: int | None) -> None:
     """``top_k`` is optional but, when given, must select at least one hit."""
     if top_k is not None and top_k < 1:
@@ -162,8 +187,11 @@ def reciprocal_rank_fusion(
     resolved = _resolve_weights(results.keys(), weights)
     accumulator = _FusionAccumulator()
     for name, hits in results.items():
+        unique = _dedupe(hits, name)
+        _validate_scores(unique, name)
+        _validate_ranks(unique, name)
         weight = resolved[name]
-        for hit in _dedupe(hits, name):
+        for hit in unique:
             accumulator.add(name, hit, weight / (k + hit.rank))
     return accumulator.finalize("hybrid-rrf", top_k)
 
@@ -186,6 +214,7 @@ def weighted_score_fusion(
     accumulator = _FusionAccumulator()
     for name, hits in results.items():
         unique = _dedupe(hits, name)
+        _validate_scores(unique, name)
         if not unique:
             continue
         weight = resolved[name]
@@ -209,18 +238,23 @@ class HybridRetriever:
 
     def __init__(
         self,
-        retrievers: Sequence[Retriever],
+        retrievers: Iterable[Retriever],
         *,
         method: FusionMethod | str = FusionMethod.RRF,
         weights: Mapping[str, float] | None = None,
         rrf_k: int = 60,
         candidates: int = 50,
     ) -> None:
-        if not retrievers:
+        # Materialize once: a generator would be silently emptied by the
+        # validation pass and the constructor would then store nothing.
+        materialized = tuple(retrievers)
+        if not materialized:
             raise ValueError("at least one retriever is required")
-        names = [retriever.name for retriever in retrievers]
+        names = [retriever.name for retriever in materialized]
         if len(set(names)) != len(names):
             raise ValueError(f"retriever names must be unique, got {names}")
+        if rrf_k < 0:
+            raise ValueError("rrf_k must be non-negative")
         if candidates < 1:
             raise ValueError("candidates must be at least 1")
         try:
@@ -231,7 +265,17 @@ class HybridRetriever:
             unknown = sorted(set(weights) - set(names))
             if unknown:
                 raise ValueError(f"weights reference unknown retrievers: {unknown}")
-        self._retrievers = tuple(retrievers)
+            # Validate the effective weights (defaults included) so that a
+            # misconfiguration fails here instead of during the first query.
+            resolved = {name: weights.get(name, 1.0) for name in names}
+            for name, weight in resolved.items():
+                if not math.isfinite(weight) or weight < 0:
+                    raise ValueError(
+                        f"weight for {name!r} must be finite and non-negative, got {weight!r}"
+                    )
+            if not any(weight > 0 for weight in resolved.values()):
+                raise ValueError("at least one weight must be positive")
+        self._retrievers = materialized
         self._method = resolved_method
         self._weights = None if weights is None else dict(weights)
         self._rrf_k = rrf_k

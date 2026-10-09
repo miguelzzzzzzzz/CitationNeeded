@@ -15,7 +15,12 @@ import pytest
 
 from rag_engine.models import Chunk
 from rag_engine.retrieval.embedders import HashingEmbedder
-from rag_engine.retrieval.fusion import FusionMethod, HybridRetriever
+from rag_engine.retrieval.fusion import (
+    FusionMethod,
+    HybridRetriever,
+    reciprocal_rank_fusion,
+    weighted_score_fusion,
+)
 from rag_engine.retrieval.retriever import (
     DenseRetriever,
     LexicalRetriever,
@@ -271,3 +276,63 @@ def test_hybrid_retrieves_each_chunk_once_and_honours_metadata_filters() -> None
     # the filter applies inside both delegates: c5 is out despite matching "vector"
     assert set(ids) <= {"c1", "c2", "c3", "c4"}
     assert all(result.chunk.metadata.get("topic") == "math" for result in results)
+
+
+@pytest.mark.parametrize("score", [float("nan"), float("inf")])
+def test_rrf_rejects_non_finite_scores(score: float) -> None:
+    results = {"dense": [hit("a", 1, score, "dense")]}
+
+    with pytest.raises(ValueError, match="non-finite score"):
+        reciprocal_rank_fusion(results)
+
+
+@pytest.mark.parametrize("score", [float("nan"), float("inf")])
+def test_weighted_fusion_rejects_non_finite_scores(score: float) -> None:
+    results = {
+        "dense": [hit("a", 1, 0.5, "dense")],
+        "lexical": [hit("b", 1, score, "lexical")],
+    }
+
+    with pytest.raises(ValueError, match="non-finite score"):
+        weighted_score_fusion(results)
+
+
+def test_rrf_rejects_rank_below_one() -> None:
+    results = {"dense": [hit("a", 0, 1.0, "dense")]}
+
+    with pytest.raises(ValueError, match="rank below 1"):
+        reciprocal_rank_fusion(results)
+
+
+def test_accepts_generator_of_retrievers() -> None:
+    dense, lexical = _dense_and_lexical()
+
+    hybrid = HybridRetriever(r for r in (dense, lexical))
+    hits = hybrid.retrieve("q")
+
+    assert len(dense.calls) == 1
+    assert len(lexical.calls) == 1
+    assert {h.chunk.chunk_id for h in hits} == {"a", "b", "c", "d"}
+    assert {h.retriever for h in hits} == {"hybrid-rrf"}
+
+
+def test_rejects_negative_rrf_k() -> None:
+    with pytest.raises(ValueError, match="rrf_k must be non-negative"):
+        HybridRetriever([_fake("dense")], rrf_k=-1)
+
+
+@pytest.mark.parametrize("weight", [-1.0, float("nan")])
+def test_rejects_invalid_weight(weight: float) -> None:
+    with pytest.raises(ValueError, match="finite and non-negative"):
+        HybridRetriever([_fake("dense")], weights={"dense": weight})
+
+
+def test_rejects_all_zero_weights() -> None:
+    retrievers = [_fake("dense"), _fake("lexical")]
+
+    with pytest.raises(ValueError, match="at least one weight must be positive"):
+        HybridRetriever(
+            retrievers,
+            method="weighted",
+            weights={"dense": 0.0, "lexical": 0.0},
+        )
