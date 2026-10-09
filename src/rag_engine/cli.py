@@ -23,7 +23,7 @@ from typing import Any
 from pydantic import ValidationError
 
 from rag_engine.chunking import chunk_documents, chunk_stats
-from rag_engine.config import ChunkingConfig, Settings
+from rag_engine.config import ChunkingConfig, IngestionConfig, Settings
 from rag_engine.ingestion import ingest_path
 from rag_engine.models import Chunk
 from rag_engine.retrieval import (
@@ -41,6 +41,14 @@ from rag_engine.retrieval import (
 )
 
 _TEXT_PREVIEW_CHARS = 200
+
+
+def _add_corpus_arg(parser: argparse.ArgumentParser) -> None:
+    parser.add_argument(
+        "--corpus-id",
+        default=None,
+        help="Corpus namespace for document ids (default: RAG_CORPUS_ID, else root dir name).",
+    )
 
 
 def _add_chunking_args(parser: argparse.ArgumentParser) -> None:
@@ -73,6 +81,7 @@ def _build_parser() -> argparse.ArgumentParser:
         help="JSONL file to write chunks into (one JSON object per line).",
     )
     _add_chunking_args(ingest)
+    _add_corpus_arg(ingest)
 
     index = sub.add_parser("index", help="Build a dense + lexical index.")
     index.add_argument(
@@ -95,6 +104,7 @@ def _build_parser() -> argparse.ArgumentParser:
         help="Embedder spec, e.g. 'hashing', 'hashing-256', 'fastembed:BAAI/bge-small-en-v1.5'.",
     )
     _add_chunking_args(index)
+    _add_corpus_arg(index)
 
     search = sub.add_parser("search", help="Query a saved index directory.")
     search.add_argument("index_dir", type=Path, help="Index directory written by 'index'.")
@@ -178,6 +188,14 @@ def _settings_from_args(args: argparse.Namespace) -> Settings:
         # model_copy is safe here: `chunking` was validated above. Keeps the
         # ingestion and embedding sections from the environment intact.
         settings = settings.model_copy(update={"chunking": chunking})
+    if getattr(args, "corpus_id", None) is not None:
+        try:
+            ingestion = IngestionConfig.model_validate(
+                settings.ingestion.model_dump() | {"corpus_id": args.corpus_id}
+            )
+        except ValidationError as exc:
+            raise ValueError(f"invalid --corpus-id: {exc}") from exc
+        settings = settings.model_copy(update={"ingestion": ingestion})
     return settings
 
 

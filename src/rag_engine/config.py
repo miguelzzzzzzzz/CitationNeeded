@@ -13,7 +13,9 @@ from collections.abc import Mapping
 from enum import StrEnum
 from typing import Self
 
-from pydantic import BaseModel, ConfigDict, Field, ValidationError, model_validator
+from pydantic import BaseModel, ConfigDict, Field, ValidationError, field_validator, model_validator
+
+from rag_engine.models import validate_corpus_id
 
 ENV_PREFIX = "RAG_"
 
@@ -58,6 +60,14 @@ class IngestionConfig(BaseModel):
 
     max_file_bytes: int = Field(default=20_000_000, gt=0)
     follow_symlinks: bool = False
+    # Namespace for document ids (see rag_engine.models.make_doc_id). None means
+    # "derive from the ingest root's directory name".
+    corpus_id: str | None = None
+
+    @field_validator("corpus_id")
+    @classmethod
+    def _check_corpus_id(cls, value: str | None) -> str | None:
+        return None if value is None else validate_corpus_id(value)
 
 
 class EmbeddingConfig(BaseModel):
@@ -94,6 +104,7 @@ class Settings(BaseModel):
         mapping = {
             "MAX_FILE_BYTES": (ingestion, "max_file_bytes"),
             "FOLLOW_SYMLINKS": (ingestion, "follow_symlinks"),
+            "CORPUS_ID": (ingestion, "corpus_id"),
             "CHUNK_STRATEGY": (chunking, "strategy"),
             "CHUNK_SIZE": (chunking, "chunk_size"),
             "CHUNK_OVERLAP": (chunking, "chunk_overlap"),

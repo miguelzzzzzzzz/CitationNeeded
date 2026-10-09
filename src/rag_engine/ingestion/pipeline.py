@@ -8,7 +8,7 @@ from pathlib import Path
 
 from rag_engine.config import IngestionConfig
 from rag_engine.ingestion.loaders import DEFAULT_LOADERS, Loader, LoaderError, loader_for
-from rag_engine.models import Document
+from rag_engine.models import DEFAULT_CORPUS_ID, Document, corpus_id_from_name
 
 
 @dataclass(frozen=True)
@@ -21,6 +21,7 @@ class SkippedFile:
 class IngestionReport:
     documents: list[Document] = field(default_factory=list)
     skipped: list[SkippedFile] = field(default_factory=list)
+    corpus_id: str = DEFAULT_CORPUS_ID
 
     @property
     def files_seen(self) -> int:
@@ -49,10 +50,19 @@ def ingest_path(
 ) -> IngestionReport:
     """Load every supported file under ``root``.
 
+    Document ids are ``make_doc_id(corpus_id, source)``, so they are stable
+    across machines and across different absolute locations of the same corpus.
+    The corpus id defaults to ``corpus_id_from_name(base.resolve().name)``,
+    where ``base`` is the corpus root (the directory itself, or the parent
+    directory when ``root`` is a file); two corpora with different corpus ids
+    never share doc ids even for identical relative paths. Pass an explicit
+    corpus id (``IngestionConfig.corpus_id``, ``RAG_CORPUS_ID`` or
+    ``--corpus-id``) when the directory name is not a stable name for the
+    corpus.
+
     Failures are isolated per file and reported in ``IngestionReport.skipped``
     (unsupported type, too large, unreadable, empty, or duplicate content).
-    Sources are POSIX paths relative to ``root`` so ids are stable across
-    machines.
+    Sources are POSIX paths relative to ``base``.
     """
     config = config or IngestionConfig()
     root_path = Path(root)
@@ -60,7 +70,8 @@ def ingest_path(
         raise FileNotFoundError(f"ingestion root does not exist: {root_path}")
     loader_list = tuple(loaders)
     base = root_path.parent if root_path.is_file() else root_path
-    report = IngestionReport()
+    corpus_id = config.corpus_id or corpus_id_from_name(base.resolve().name)
+    report = IngestionReport(corpus_id=corpus_id)
     seen_hashes: dict[str, str] = {}
 
     for path in _iter_files(root_path, config.follow_symlinks):
@@ -76,7 +87,7 @@ def ingest_path(
             )
             continue
         try:
-            document = loader.load(path, source)
+            document = loader.load(path, source, corpus_id=corpus_id)
         except LoaderError as exc:
             report.skipped.append(SkippedFile(source, str(exc)))
             continue

@@ -85,10 +85,14 @@ def build_chunks(document: Document, spans: Sequence[Span], config: ChunkingConf
         if first is not None and last is not None:
             heading_path = _common_prefix(first.heading_path, last.heading_path)
         metadata: dict[str, object] = {
-            "source": document.source,
             "title": document.title,
             "format": document.format,
             **document.metadata,
+            # Provenance keys are pinned after the loader metadata so front
+            # matter cannot shadow them.
+            "source": document.source,
+            "corpus_id": document.corpus_id,
+            "content_hash": document.content_hash,
         }
         page = first.page if first is not None else None
         if last is not None and last.page is not None and last.page != page:

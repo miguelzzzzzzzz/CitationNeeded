@@ -18,7 +18,7 @@ from typing import Protocol
 import yaml
 
 from rag_engine.ingestion.normalize import normalize_text
-from rag_engine.models import Document, MetadataValue, Section
+from rag_engine.models import DEFAULT_CORPUS_ID, Document, MetadataValue, Section
 
 
 class LoaderError(Exception):
@@ -29,7 +29,7 @@ class Loader(Protocol):
     format: str
     extensions: tuple[str, ...]
 
-    def load(self, path: Path, source: str) -> Document: ...
+    def load(self, path: Path, source: str, *, corpus_id: str = DEFAULT_CORPUS_ID) -> Document: ...
 
 
 # --------------------------------------------------------------------------- helpers
@@ -157,13 +157,18 @@ class TextLoader:
     format = "text"
     extensions: tuple[str, ...] = (".txt", ".text", ".rst", ".log")
 
-    def load(self, path: Path, source: str) -> Document:
+    def load(self, path: Path, source: str, *, corpus_id: str = DEFAULT_CORPUS_ID) -> Document:
         raw, encoding = read_text_file(path)
         text = _require_text(normalize_text(raw))
         metadata = _base_metadata(path, encoding)
         metadata["word_count"] = len(text.split())
         return Document.create(
-            source=source, title=path.stem, format=self.format, text=text, metadata=metadata
+            corpus_id=corpus_id,
+            source=source,
+            title=path.stem,
+            format=self.format,
+            text=text,
+            metadata=metadata,
         )
 
 
@@ -171,7 +176,7 @@ class MarkdownLoader:
     format = "markdown"
     extensions: tuple[str, ...] = (".md", ".markdown", ".mdx")
 
-    def load(self, path: Path, source: str) -> Document:
+    def load(self, path: Path, source: str, *, corpus_id: str = DEFAULT_CORPUS_ID) -> Document:
         raw, encoding = read_text_file(path)
         front_matter, body = split_front_matter(raw.replace("\r\n", "\n"))
         text = _require_text(normalize_text(body))
@@ -182,6 +187,7 @@ class MarkdownLoader:
         metadata["heading_count"] = len(headings)
         title = _pick_title(front_matter.get("title"), headings, path)
         return Document.create(
+            corpus_id=corpus_id,
             source=source,
             title=title,
             format=self.format,
@@ -298,7 +304,7 @@ class HTMLLoader:
     format = "html"
     extensions: tuple[str, ...] = (".html", ".htm", ".xhtml")
 
-    def load(self, path: Path, source: str) -> Document:
+    def load(self, path: Path, source: str, *, corpus_id: str = DEFAULT_CORPUS_ID) -> Document:
         raw, encoding = read_text_file(path)
         parser = _HTMLToMarkdown()
         parser.feed(raw)
@@ -312,6 +318,7 @@ class HTMLLoader:
         metadata["heading_count"] = len(headings)
         title = " ".join(parser.title.split()) or _pick_title(None, headings, path)
         return Document.create(
+            corpus_id=corpus_id,
             source=source,
             title=title,
             format=self.format,
@@ -327,7 +334,7 @@ class PDFLoader:
     format = "pdf"
     extensions: tuple[str, ...] = (".pdf",)
 
-    def load(self, path: Path, source: str) -> Document:
+    def load(self, path: Path, source: str, *, corpus_id: str = DEFAULT_CORPUS_ID) -> Document:
         from pypdf import PdfReader
         from pypdf.errors import PdfReadError
 
@@ -366,6 +373,7 @@ class PDFLoader:
         if info is not None and info.author:
             metadata["author"] = str(info.author)
         return Document.create(
+            corpus_id=corpus_id,
             source=source,
             title=pdf_title or path.stem,
             format=self.format,

@@ -19,7 +19,7 @@ def make_chunk(i: int, doc: str = "d1", **metadata: object) -> Chunk:
         index=i,
         text=f"chunk {i}",
         start_char=0,
-        end_char=7,
+        end_char=len(f"chunk {i}"),
         token_count=2,
         metadata=dict(metadata),
     )
