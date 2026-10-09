@@ -26,9 +26,20 @@ extractable text (including scanned PDFs, as OCR is out of scope), unreadable
 PDFs, and exact-duplicate content. Hidden files and directories are ignored and
 symlinks are not followed unless configured.
 
-Document ids are derived from the source path relative to the ingestion root,
-so re-ingesting an edited file keeps its id while `content_hash` changes; this
-is what incremental re-indexing (M2) will key on.
+Document ids are `sha256("<corpus_id>:<source>")[:16]`, where `source` is the
+normalized POSIX path relative to the corpus root and `corpus_id` matches
+`^[a-z0-9][a-z0-9._-]{0,63}$` (it cannot contain `:`, so the key is
+unambiguous). `corpus_id` defaults to the slugified name of the corpus root
+directory (the parent directory when ingesting a single file) and can be set
+with `IngestionConfig.corpus_id`, `RAG_CORPUS_ID`, or `--corpus-id`. Ids are
+therefore stable across checkouts and ingest roots, and differ between corpora
+even for identical relative paths. Re-ingesting an edited file keeps its id
+while `content_hash` (sha256 of the normalized text) changes. Pass an explicit
+corpus id when the directory name is not a stable name for the corpus.
+
+`ingest --out chunks.jsonl` also writes `chunks.documents.jsonl`, the normalized
+documents the chunk offsets point into; index directories keep a copy as
+`documents.jsonl` and verify every chunk against it on build and load.
 
 ### Chunkers
 

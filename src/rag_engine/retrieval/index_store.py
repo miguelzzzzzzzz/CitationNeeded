@@ -1,32 +1,45 @@
 """Index directory format: build embedders from specs and persist a hybrid index.
 
-An "index directory" bundles the dense vector store (``dense/``), the BM25
-index (``lexical/``), and a small ``index.json`` manifest. The manifest records
-the embedder by *spec* rather than by object, so an index reloads in a fresh
-process: :func:`embedder_from_spec` inverts ``Embedder.name`` for every embedder
-the library can construct, and reloading therefore reproduces the vectors that
-were indexed. The manifest also carries the vector dimension, so loading needs
-neither fastembed's model registry nor a model download; only the first embed
-does. The BM25 tokenizer is not serialized: pass the one used at build time back
-to :func:`load_index`.
+An "index directory" bundles the dense vector store (``dense/``), the BM25 index
+(``lexical/``), the normalized source documents (``documents.jsonl``), and a
+small ``index.json`` manifest. Chunk offsets point into the *normalized* text in
+``documents.jsonl``, not into raw-file bytes, so a citation can only be resolved
+against that file (:func:`load_documents`). The manifest records the embedder by
+*spec* rather than by object, so an index reloads in a fresh process:
+:func:`embedder_from_spec` inverts ``Embedder.name`` for every embedder the
+library can construct, and reloading therefore reproduces the vectors that were
+indexed. The manifest also carries the vector dimension, so loading needs neither
+fastembed's model registry nor a model download; only the first embed does. The
+BM25 tokenizer is not serialized: pass the one used at build time back to
+:func:`load_index`. Format 2 changed doc ids to ``make_doc_id(corpus_id,
+source)``; format-1 indexes are rejected and must be rebuilt.
 """
 
 from __future__ import annotations
 
 import json
+from collections.abc import Sequence
 from pathlib import Path
 from typing import Any
 
 from rag_engine.config import EmbeddingConfig
+from rag_engine.documents import DOCUMENTS_FILE, read_documents, verify_chunks, write_documents
+from rag_engine.models import Document
 from rag_engine.retrieval.bm25 import BM25Index, Tokenizer, tokenize
 from rag_engine.retrieval.embedders import Embedder, HashingEmbedder
 from rag_engine.retrieval.fastembed_embedder import FastEmbedEmbedder
 from rag_engine.retrieval.retriever import DenseRetriever, LexicalRetriever
 from rag_engine.retrieval.vector_store import InMemoryVectorStore
 
-__all__ = ["INDEX_FORMAT_VERSION", "embedder_from_spec", "load_index", "save_index"]
+__all__ = [
+    "INDEX_FORMAT_VERSION",
+    "embedder_from_spec",
+    "load_documents",
+    "load_index",
+    "save_index",
+]
 
-INDEX_FORMAT_VERSION = 1
+INDEX_FORMAT_VERSION = 2
 
 _DENSE_DIR = "dense"
 _LEXICAL_DIR = "lexical"
@@ -79,13 +92,20 @@ def embedder_from_spec(
     return embedder
 
 
-def save_index(directory: str | Path, dense: DenseRetriever, lexical: LexicalRetriever) -> None:
-    """Write a self-describing index directory: ``dense/``, ``lexical/``, manifest.
+def save_index(
+    directory: str | Path,
+    dense: DenseRetriever,
+    lexical: LexicalRetriever,
+    documents: Sequence[Document],
+) -> None:
+    """Write a self-describing index directory: ``dense/``, ``lexical/``, docs, manifest.
 
     The two retrievers must cover the same chunk ids, since the manifest stores a
-    single chunk count and hybrid fusion assumes aligned key spaces; both checks
-    run before anything is written so a failed save cannot leave a directory that
-    looks loadable. Any existing manifest is deleted first and the new manifest is
+    single chunk count and hybrid fusion assumes aligned key spaces, and every
+    chunk offset must resolve inside ``documents``; all checks run before anything
+    is written so a failed save cannot leave a directory that looks loadable.
+    ``documents`` may hold entries no chunk refers to (an empty file yields no
+    chunks). Any existing manifest is deleted first and the new manifest is
     written last, so an interrupted re-save never pairs stale metadata with fresh
     sub-indexes.
     """
@@ -98,17 +118,21 @@ def save_index(directory: str | Path, dense: DenseRetriever, lexical: LexicalRet
             f"{len(lexical.bm25)}, and {len(dense_ids ^ lexical_ids)} chunk ids differ; "
             "both must be built from the same chunks"
         )
+    verify_chunks(dense.store.chunks, documents)
+    verify_chunks(lexical.bm25.chunks, documents)
     path = Path(directory)
     path.mkdir(parents=True, exist_ok=True)
     manifest_path = path / _MANIFEST
     manifest_path.unlink(missing_ok=True)
     dense.store.save(path / _DENSE_DIR, embedder_name=dense.embedder.name)
     lexical.bm25.save(path / _LEXICAL_DIR)
+    write_documents(path / DOCUMENTS_FILE, documents)
     manifest: dict[str, object] = {
         "format_version": INDEX_FORMAT_VERSION,
         "embedder": embedder_spec,
         "dimension": dense.store.dimension,
         "chunks": len(dense.store),
+        "documents": len(documents),
         "bm25": {"k1": lexical.bm25.k1, "b": lexical.bm25.b},
     }
     manifest_path.write_text(json.dumps(manifest, indent=2), encoding="utf-8")
@@ -126,7 +150,9 @@ def load_index(
     size, threads); the stored spec wins for the hashing dimension and the
     fastembed model name so the reloaded embedder matches the saved vectors. The
     tokenizer is not part of the on-disk format, so a custom one must be passed
-    here again to reproduce the terms the BM25 index was built with.
+    here again to reproduce the terms the BM25 index was built with. Chunk offsets
+    are re-checked against ``documents.jsonl`` so a loaded index can always
+    resolve its citations.
     """
     path = Path(directory)
     manifest_path = path / _MANIFEST
@@ -134,6 +160,12 @@ def load_index(
         raise ValueError(f"not an index directory: {directory}")
     manifest = _read_manifest(manifest_path)
     format_version = _manifest_int(manifest, "format_version", minimum=0)
+    if format_version < INDEX_FORMAT_VERSION:
+        raise ValueError(
+            f"index format {format_version} is no longer supported "
+            f"(current format is {INDEX_FORMAT_VERSION}: corpus-scoped doc ids and "
+            "documents.jsonl); rebuild it with `rag-engine index`"
+        )
     if format_version != INDEX_FORMAT_VERSION:
         raise ValueError(
             f"index manifest field 'format_version' is {format_version}, "
@@ -141,10 +173,17 @@ def load_index(
         )
     embedder_spec = _manifest_str(manifest, "embedder")
     chunks = _manifest_int(manifest, "chunks", minimum=0)
+    documents_count = _manifest_int(manifest, "documents", minimum=0)
     dimension = _manifest_int(manifest, "dimension", minimum=1)
     embedder = embedder_from_spec(embedder_spec, config, dimension=dimension)
     store = InMemoryVectorStore.load(path / _DENSE_DIR)
     bm25 = BM25Index.load(path / _LEXICAL_DIR, tokenizer=tokenizer)
+    documents = read_documents(path / DOCUMENTS_FILE)
+    if len(documents) != documents_count:
+        raise ValueError(
+            f"index is inconsistent with manifest: documents={len(documents)}, "
+            f"expected {documents_count}"
+        )
     if len(store) != chunks or len(bm25) != chunks:
         raise ValueError(
             f"index is inconsistent with manifest: dense={len(store)}, "
@@ -161,7 +200,18 @@ def load_index(
             f"index is inconsistent with manifest: dense holds {len(dense_ids)} chunk ids, "
             f"lexical holds {len(lexical_ids)}, and {len(dense_ids ^ lexical_ids)} ids differ"
         )
+    verify_chunks(store.chunks, documents)
+    verify_chunks(bm25.chunks, documents)
     return DenseRetriever(embedder, store), LexicalRetriever(bm25)
+
+
+def load_documents(directory: str | Path) -> list[Document]:
+    """Return the normalized documents an index's chunk offsets point into.
+
+    Citation offsets are relative to the normalized text, so resolving one needs
+    the stored text rather than the original file on disk.
+    """
+    return read_documents(Path(directory) / DOCUMENTS_FILE)
 
 
 def _persistable_spec(name: str, dimension: int) -> str:

@@ -15,7 +15,7 @@ from typing import Any
 import pytest
 
 from rag_engine.config import EmbeddingConfig
-from rag_engine.models import Chunk
+from rag_engine.models import Chunk, Document, make_doc_id
 from rag_engine.retrieval import fastembed_embedder
 from rag_engine.retrieval.bm25 import BM25Index
 from rag_engine.retrieval.embedders import Embedder, HashingEmbedder
@@ -29,21 +29,47 @@ from rag_engine.retrieval.index_store import (
 from rag_engine.retrieval.retriever import DenseRetriever, LexicalRetriever, RetrievedChunk
 
 HASHING_SPEC = "hashing-64"
+CORPUS_ID = "test"
 DEFAULT_FASTEMBED_MODEL = "BAAI/bge-small-en-v1.5"
 
 
 def make_chunk(doc: str, i: int, text: str, **metadata: object) -> Chunk:
-    """Build a chunk whose provenance mirrors what ingestion would produce."""
+    """Build a chunk whose provenance mirrors what ingestion would produce.
+
+    Each chunk gets its own one-chunk document (see :func:`documents_for`) so the
+    offsets verify against ``documents.jsonl`` on save and load.
+    """
+    source = f"{doc}/{i}.md"
     return Chunk(
         chunk_id=f"{doc}-{i}",
-        doc_id=doc,
+        doc_id=make_doc_id(CORPUS_ID, source),
         index=i,
         text=text,
         start_char=0,
         end_char=len(text),
         token_count=len(text.split()),
-        metadata={"source": f"{doc}.md", **metadata},
+        metadata={"source": source, **metadata},
     )
+
+
+def documents_for(*chunk_lists: Sequence[Chunk]) -> list[Document]:
+    """The normalized documents behind ``make_chunk`` chunks, one per doc id."""
+    documents: dict[str, Document] = {}
+    for chunks in chunk_lists:
+        for chunk in chunks:
+            source = str(chunk.metadata["source"])
+            documents.setdefault(
+                chunk.doc_id,
+                Document.create(
+                    source=source, title=source, format="text", text=chunk.text, corpus_id=CORPUS_ID
+                ),
+            )
+    return list(documents.values())
+
+
+def save(directory: Path, dense: DenseRetriever, lexical: LexicalRetriever) -> None:
+    """``save_index`` with the documents both retrievers' chunks came from."""
+    save_index(directory, dense, lexical, documents_for(dense.store.chunks, lexical.bm25.chunks))
 
 
 def ids_and_scores(hits: list[RetrievedChunk]) -> list[tuple[str, float]]:
@@ -94,7 +120,7 @@ def saved_index(
 ) -> tuple[Path, DenseRetriever, LexicalRetriever]:
     dense, lexical = retrievers
     directory = tmp_path / "index"
-    save_index(directory, dense, lexical)
+    save(directory, dense, lexical)
     return directory, dense, lexical
 
 
@@ -193,7 +219,7 @@ def test_save_index_writes_expected_manifest(
     assert (directory / "lexical").is_dir()
 
     manifest = read_manifest(directory)
-    assert manifest["format_version"] == INDEX_FORMAT_VERSION == 1
+    assert manifest["format_version"] == INDEX_FORMAT_VERSION == 2
     assert manifest["embedder"] == HASHING_SPEC
     assert manifest["dimension"] == 64
     assert manifest["chunks"] == len(chunks) == 4
@@ -205,7 +231,7 @@ def test_save_load_round_trip_preserves_retrieval_results(
 ) -> None:
     dense, lexical = retrievers
     directory = tmp_path / "index"
-    save_index(directory, dense, lexical)
+    save(directory, dense, lexical)
 
     loaded_dense, loaded_lexical = load_index(directory, EmbeddingConfig(batch_size=9))
 
@@ -235,7 +261,7 @@ def test_save_index_rejects_mismatched_chunk_counts(tmp_path: Path, chunks: list
 
     directory = tmp_path / "index"
     with pytest.raises(ValueError, match="both must be built from the same chunks"):
-        save_index(directory, dense, lexical)
+        save(directory, dense, lexical)
     assert not (directory / "index.json").exists()
     assert not (directory / "dense").exists()
     assert not (directory / "lexical").exists()
@@ -276,7 +302,7 @@ def test_fastembed_index_round_trip(tmp_path: Path, chunks: list[Chunk]) -> None
     assert lexical.index(chunks) == len(chunks)
 
     directory = tmp_path / "fastembed-index"
-    save_index(directory, dense, lexical)
+    save(directory, dense, lexical)
     loaded_dense, _ = load_index(directory, config)
 
     assert loaded_dense.embedder.name == f"fastembed:{DEFAULT_FASTEMBED_MODEL}"
@@ -354,7 +380,7 @@ def test_save_index_rejects_unknown_embedder_spec(tmp_path: Path, chunks: list[C
     assert lexical.index(chunks) == len(chunks)
     directory = tmp_path / "index"
     with pytest.raises(ValueError, match="cannot be persisted"):
-        save_index(directory, dense, lexical)
+        save(directory, dense, lexical)
     assert not (directory / "index.json").exists()
 
 
@@ -369,7 +395,7 @@ def test_save_index_rejects_same_count_with_different_chunk_ids(
     assert lexical.index(other) == len(other)
     directory = tmp_path / "index"
     with pytest.raises(ValueError, match="chunk ids differ"):
-        save_index(directory, dense, lexical)
+        save(directory, dense, lexical)
     assert not (directory / "index.json").exists()
 
 
@@ -382,7 +408,7 @@ def test_save_index_over_existing_directory_returns_new_chunks(
         make_chunk("gamma", 1, "the quick brown fox jumps over the lazy dog"),
     ]
     dense, lexical = build_retrievers(replacement)
-    save_index(directory, dense, lexical)
+    save(directory, dense, lexical)
     loaded_dense, loaded_lexical = load_index(directory)
     dense_ids = sorted(chunk.chunk_id for chunk in loaded_dense.store.chunks)
     lexical_ids = sorted(chunk.chunk_id for chunk in loaded_lexical.bm25.chunks)
@@ -431,7 +457,7 @@ def test_load_index_rejects_missing_embedder(
         ("chunks", "four", "'chunks' must be an integer >= 0"),
         ("dimension", True, "'dimension' must be an integer >= 1"),
         ("dimension", 0, "'dimension' must be an integer >= 1"),
-        ("format_version", 99, "expected 1"),
+        ("format_version", 99, "expected 2"),
     ],
 )
 def test_load_index_rejects_invalid_manifest_fields(
@@ -481,7 +507,7 @@ def test_load_index_reproduces_custom_tokenizer(tmp_path: Path, chunks: list[Chu
     assert dense.index(chunks) == len(chunks)
     assert lexical.index(chunks) == len(chunks)
     directory = tmp_path / "index"
-    save_index(directory, dense, lexical)
+    save(directory, dense, lexical)
     _, reloaded = load_index(directory, tokenizer=lambda t: t.lower().split())
     query = "BM25 RANKS documents"
     assert ids_and_scores(reloaded.retrieve(query, k=2)) == ids_and_scores(

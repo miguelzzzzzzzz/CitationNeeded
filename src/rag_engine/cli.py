@@ -24,8 +24,14 @@ from pydantic import ValidationError
 
 from rag_engine.chunking import chunk_documents, chunk_stats
 from rag_engine.config import ChunkingConfig, IngestionConfig, Settings
+from rag_engine.documents import (
+    documents_path_for_chunks,
+    read_documents,
+    verify_chunks,
+    write_documents,
+)
 from rag_engine.ingestion import ingest_path
-from rag_engine.models import Chunk
+from rag_engine.models import Chunk, Document
 from rag_engine.retrieval import (
     CrossEncoderReranker,
     DenseRetriever,
@@ -223,7 +229,11 @@ def cmd_ingest(args: argparse.Namespace) -> int:
     report = ingest_path(args.path, settings.ingestion)
     chunks = chunk_documents(report.documents, settings.chunking)
 
-    args.out.parent.mkdir(parents=True, exist_ok=True)
+    # Verify before writing anything, then write the documents first: a chunks
+    # file never exists without the normalized text its offsets point into.
+    verify_chunks(chunks, report.documents)
+    documents_path = documents_path_for_chunks(args.out)
+    write_documents(documents_path, report.documents)
     with args.out.open("w", encoding="utf-8") as handle:
         for chunk in chunks:
             handle.write(chunk.model_dump_json() + "\n")
@@ -234,6 +244,8 @@ def cmd_ingest(args: argparse.Namespace) -> int:
         "strategy": settings.chunking.strategy.value,
         "chunk_size": settings.chunking.chunk_size,
         "chunk_overlap": settings.chunking.chunk_overlap,
+        "documents_file": str(documents_path),
+        "corpus_id": report.corpus_id,
         **chunk_stats(chunks),
     }
     print(json.dumps(stats, indent=2))
@@ -248,12 +260,12 @@ def cmd_ingest(args: argparse.Namespace) -> int:
 class _IndexInput:
     """Chunks to index plus the source statistics echoed by ``index``.
 
-    ``documents`` is ``None`` when ``PATH`` was a chunks file, since that file
-    no longer carries the document count it was produced from.
+    ``documents`` always holds every ingested document, including those that
+    produced no chunks, so citation offsets can be resolved and verified.
     """
 
     chunks: list[Chunk]
-    documents: int | None
+    documents: list[Document]
     skipped: int
 
 
@@ -280,7 +292,18 @@ def _load_index_chunks(path: Path, settings: Settings) -> _IndexInput:
     commands chunk documents identically.
     """
     if _is_chunks_file(path):
-        return _IndexInput(chunks=_read_chunks_file(path), documents=None, skipped=0)
+        chunks = _read_chunks_file(path)
+        documents_path = documents_path_for_chunks(path)
+        if not documents_path.is_file():
+            raise ValueError(
+                f"documents file not found: {documents_path} "
+                "(re-run `rag-engine ingest`, which writes it next to the chunks file)"
+            )
+        documents = read_documents(documents_path)
+        # Reject a stale or hand-edited chunks file instead of indexing text
+        # whose citations would not resolve against the documents.
+        verify_chunks(chunks, documents)
+        return _IndexInput(chunks=chunks, documents=documents, skipped=0)
     report = ingest_path(path, settings.ingestion)
     if report.skipped:
         print("\nSkipped:", file=sys.stderr)
@@ -289,7 +312,7 @@ def _load_index_chunks(path: Path, settings: Settings) -> _IndexInput:
     chunks = chunk_documents(report.documents, settings.chunking)
     return _IndexInput(
         chunks=chunks,
-        documents=len(report.documents),
+        documents=report.documents,
         skipped=len(report.skipped),
     )
 
@@ -336,10 +359,10 @@ def cmd_index(args: argparse.Namespace) -> int:
         print(f"error: {exc}", file=sys.stderr)
         return 2
     lexical.index(loaded.chunks)
-    save_index(args.out, dense, lexical)
+    save_index(args.out, dense, lexical, loaded.documents)
 
     summary = {
-        "documents": loaded.documents,
+        "documents": len(loaded.documents),
         "skipped": loaded.skipped,
         "chunks": len(loaded.chunks),
         "embedder": embedder.name,

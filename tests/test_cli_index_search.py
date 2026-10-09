@@ -55,7 +55,7 @@ def test_index_from_chunks_jsonl(corpus_dir: Path, tmp_path: Path, capsys: Captu
     capsys.readouterr()
     assert main(["index", str(chunks), "--out", str(tmp_path / "i"), "--embedder", "hashing"]) == 0
     summary = json.loads(capsys.readouterr().out)
-    assert summary["documents"] is None
+    assert summary["documents"] == 3  # read from the sibling documents file
     assert summary["chunks"] == len(lines) == 4
 
 
@@ -93,6 +93,7 @@ def test_index_input_errors(tmp_path: Path, capsys: Capture) -> None:
     assert "line 1" in capsys.readouterr().err  # first line is missing required fields
     empty = tmp_path / "empty.jsonl"
     empty.write_text("\n", encoding="utf-8")
+    (tmp_path / "empty.documents.jsonl").write_text("", encoding="utf-8")
     assert main(["index", str(empty), "--out", out, "--embedder", "hashing"]) == 1
     assert "no chunks to index" in capsys.readouterr().err
     assert not (tmp_path / "i" / "index.json").exists()

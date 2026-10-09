@@ -40,13 +40,21 @@ class RetrievedChunk:
     components: Mapping[str, float] = field(default_factory=dict)
 
     def provenance(self) -> dict[str, Any]:
-        """Citation fields shared by every retriever's output."""
+        """Citation fields shared by every retriever's output.
+
+        ``start_char``/``end_char`` index the normalized document text whose
+        sha256 is ``content_hash`` (stored in the index's ``documents.jsonl``),
+        not the raw file bytes. ``page_end`` equals ``page`` unless the chunk
+        spans pages.
+        """
         return {
             "doc_id": self.chunk.doc_id,
             "chunk_id": self.chunk.chunk_id,
             "source": self.chunk.metadata.get("source"),
+            "content_hash": self.chunk.metadata.get("content_hash"),
             "heading_path": list(self.chunk.heading_path),
             "page": self.chunk.page,
+            "page_end": self.chunk.metadata.get("page_end", self.chunk.page),
             "start_char": self.chunk.start_char,
             "end_char": self.chunk.end_char,
         }

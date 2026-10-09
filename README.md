@@ -6,7 +6,8 @@ A production-style hybrid RAG service that answers with citations to exact sourc
 
 A retrieval-augmented generation engine built the way a production team would
 build one: typed, swappable pipeline stages; structure-aware chunking with
-exact source offsets; hybrid dense + BM25 retrieval with reranking; cited,
+exact character offsets into the normalized document text (stored with the
+index, so every citation can be re-checked); hybrid dense + BM25 retrieval with reranking; cited,
 schema-validated answers; and a reproducible evaluation harness so every
 design choice is backed by measured retrieval quality and latency.
 
@@ -47,6 +48,23 @@ This loads Markdown, HTML, PDF, and text files, writes one JSON chunk per line
 (text, exact character span, heading path, page, metadata), and prints chunk
 statistics plus any skipped files with the reason. Details:
 [docs/ingestion-and-chunking.md](docs/ingestion-and-chunking.md).
+
+Offsets index the *normalized* document text (NFKC, so e.g. the `ﬁ` ligature
+becomes `fi`; CRLF becomes LF; control characters are removed), not raw-file
+bytes. `ingest` therefore also writes `chunks.documents.jsonl` next to
+`chunks.jsonl`, and every index directory carries `documents.jsonl`: the
+normalized text and its sha256 `content_hash` for each document. `index` and
+`load_index` re-check every chunk against it (`chunk.text ==
+document.text[start_char:end_char]`, matching `content_hash`) and refuse
+anything that does not match.
+
+Document ids are `sha256("<corpus_id>:<relative/posix/path>")[:16]`, so the same
+corpus gives the same ids wherever it is checked out, and two corpora never share
+ids. `corpus_id` defaults to the corpus root directory name (slugified) and can be
+set with `--corpus-id`, `RAG_CORPUS_ID`, or `IngestionConfig.corpus_id`; see
+[ADR-0006](docs/adr/0006-corpus-scoped-ids-and-verifiable-offsets.md). Index
+format 2 introduced both changes; format-1 indexes are rejected with a request
+to rebuild.
 
 Build an index directory (dense vectors + BM25) and query it:
 
