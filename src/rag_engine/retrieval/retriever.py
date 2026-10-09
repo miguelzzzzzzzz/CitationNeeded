@@ -13,6 +13,8 @@ from collections.abc import Sequence
 from dataclasses import dataclass
 from typing import Any, Protocol
 
+import numpy as np
+
 from rag_engine.models import Chunk
 from rag_engine.retrieval.bm25 import BM25Index
 from rag_engine.retrieval.embedders import Embedder
@@ -122,7 +124,12 @@ class DenseRetriever:
         if not query.strip():
             # A blank query has no signal; skip the (possibly remote) embed call.
             return []
-        hits = self._store.search(self._embedder.embed_query(query), k, filters)
+        vector = self._embedder.embed_query(query)
+        if not np.any(vector):
+            # A zero query vector (e.g. no hashed features) scores every chunk 0;
+            # returning that arbitrary list would look like a real ranking.
+            return []
+        hits = self._store.search(vector, k, filters)
         return [
             RetrievedChunk(chunk=hit.chunk, score=hit.score, rank=hit.rank, retriever=self.name)
             for hit in hits

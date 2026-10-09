@@ -357,3 +357,10 @@ def test_dense_fastembed_ranks_rrf_passage_first() -> None:
     assert len(results) == 3
     assert [r.rank for r in results] == [1, 2, 3]
     assert results[0].chunk.text == FUSION_TEXT
+
+
+def test_dense_query_with_zero_vector_returns_no_hits(chunks: list[Chunk]) -> None:
+    """Punctuation-only queries hash to no features; that must not rank every chunk at 0."""
+    retriever = DenseRetriever(HashingEmbedder(dimension=64))
+    retriever.index(chunks)
+    assert retriever.retrieve("?!") == []
