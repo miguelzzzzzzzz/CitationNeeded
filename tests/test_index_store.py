@@ -8,13 +8,17 @@ is missing.
 from __future__ import annotations
 
 import json
+from collections.abc import Sequence
 from pathlib import Path
+from typing import Any
 
 import pytest
 
 from rag_engine.config import EmbeddingConfig
 from rag_engine.models import Chunk
-from rag_engine.retrieval.embedders import HashingEmbedder
+from rag_engine.retrieval import fastembed_embedder
+from rag_engine.retrieval.bm25 import BM25Index
+from rag_engine.retrieval.embedders import Embedder, HashingEmbedder
 from rag_engine.retrieval.fastembed_embedder import FastEmbedEmbedder
 from rag_engine.retrieval.index_store import (
     INDEX_FORMAT_VERSION,
@@ -249,7 +253,7 @@ def test_load_index_rejects_unknown_format_version(
 ) -> None:
     directory, _, _ = saved_index
     edit_manifest(directory, format_version=INDEX_FORMAT_VERSION + 1)
-    with pytest.raises(ValueError, match="unsupported index format"):
+    with pytest.raises(ValueError, match="format_version"):
         load_index(directory)
 
 
@@ -279,3 +283,208 @@ def test_fastembed_index_round_trip(tmp_path: Path, chunks: list[Chunk]) -> None
     assert ids_and_scores(loaded_dense.retrieve("dense vector retrieval", k=2)) == ids_and_scores(
         dense.retrieve("dense vector retrieval", k=2)
     )
+
+
+# (to monkeypatch its private registry lookup), BM25Index, and the Embedder protocol.
+
+
+def fail_registry_lookup(*args: object, **kwargs: object) -> int:
+    """Stand-in for ``_model_dimension``: it must never be called by the loader."""
+    raise AssertionError("fastembed's model registry must not be consulted")
+
+
+# ------------------------------------------- embedder_from_spec(dimension=...)
+
+
+def test_embedder_from_spec_builds_fastembed_from_dimension_without_registry(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setattr(fastembed_embedder, "_model_dimension", fail_registry_lookup)
+    embedder = embedder_from_spec(f"fastembed:{DEFAULT_FASTEMBED_MODEL}", dimension=384)
+    assert isinstance(embedder, FastEmbedEmbedder)
+    assert embedder.name == f"fastembed:{DEFAULT_FASTEMBED_MODEL}"
+    assert embedder.dimension == 384
+
+
+def test_embedder_from_spec_hashing_accepts_matching_dimension() -> None:
+    embedder = embedder_from_spec(HASHING_SPEC, dimension=64)
+    assert isinstance(embedder, HashingEmbedder)
+    assert embedder.name == HASHING_SPEC
+    assert embedder.dimension == 64
+
+
+def test_embedder_from_spec_hashing_rejects_conflicting_dimension() -> None:
+    with pytest.raises(ValueError, match="fixes the hashing dimension at 64"):
+        embedder_from_spec(HASHING_SPEC, dimension=128)
+
+
+def test_embedder_from_spec_rejects_fastembed_spec_without_model() -> None:
+    with pytest.raises(ValueError, match="must name a model"):
+        embedder_from_spec("fastembed:")
+
+
+# ------------------------------------------------------- save_index guards
+
+
+class _RenamedEmbedder:
+    """Delegate to a real embedder but advertise a name no spec can rebuild."""
+
+    def __init__(self, inner: Embedder) -> None:
+        self._inner = inner
+
+    @property
+    def name(self) -> str:
+        return "custom-embedder"
+
+    @property
+    def dimension(self) -> int:
+        return self._inner.dimension
+
+    def embed_documents(self, texts: Sequence[str]) -> Any:
+        return self._inner.embed_documents(texts)
+
+    def embed_query(self, text: str) -> Any:
+        return self._inner.embed_query(text)
+
+
+def test_save_index_rejects_unknown_embedder_spec(tmp_path: Path, chunks: list[Chunk]) -> None:
+    dense = DenseRetriever(_RenamedEmbedder(HashingEmbedder(dimension=64, use_bigrams=False)))
+    lexical = LexicalRetriever()
+    assert dense.index(chunks) == len(chunks)
+    assert lexical.index(chunks) == len(chunks)
+    directory = tmp_path / "index"
+    with pytest.raises(ValueError, match="cannot be persisted"):
+        save_index(directory, dense, lexical)
+    assert not (directory / "index.json").exists()
+
+
+def test_save_index_rejects_same_count_with_different_chunk_ids(
+    tmp_path: Path,
+    retrievers: tuple[DenseRetriever, LexicalRetriever],
+    chunks: list[Chunk],
+) -> None:
+    dense, _ = retrievers
+    other = [make_chunk("gamma", i, chunk.text) for i, chunk in enumerate(chunks)]
+    lexical = LexicalRetriever()
+    assert lexical.index(other) == len(other)
+    directory = tmp_path / "index"
+    with pytest.raises(ValueError, match="chunk ids differ"):
+        save_index(directory, dense, lexical)
+    assert not (directory / "index.json").exists()
+
+
+def test_save_index_over_existing_directory_returns_new_chunks(
+    saved_index: tuple[Path, DenseRetriever, LexicalRetriever],
+) -> None:
+    directory, _, _ = saved_index
+    replacement = [
+        make_chunk("gamma", 0, "colourless green ideas sleep furiously"),
+        make_chunk("gamma", 1, "the quick brown fox jumps over the lazy dog"),
+    ]
+    dense, lexical = build_retrievers(replacement)
+    save_index(directory, dense, lexical)
+    loaded_dense, loaded_lexical = load_index(directory)
+    dense_ids = sorted(chunk.chunk_id for chunk in loaded_dense.store.chunks)
+    lexical_ids = sorted(chunk.chunk_id for chunk in loaded_lexical.bm25.chunks)
+    assert dense_ids == ["gamma-0", "gamma-1"]
+    assert lexical_ids == ["gamma-0", "gamma-1"]
+    assert read_manifest(directory)["chunks"] == 2
+
+
+# ------------------------------------------------- load_index manifest checks
+
+
+@pytest.mark.parametrize(
+    ("text", "message"),
+    [
+        ("[1]", "must be a JSON object"),
+        ("null", "must be a JSON object"),
+        ('{"embedder": "hashing-64"', "not valid JSON"),
+    ],
+)
+def test_load_index_rejects_malformed_manifest_json(
+    saved_index: tuple[Path, DenseRetriever, LexicalRetriever],
+    text: str,
+    message: str,
+) -> None:
+    directory, _, _ = saved_index
+    (directory / "index.json").write_text(text, encoding="utf-8")
+    with pytest.raises(ValueError, match=message):
+        load_index(directory)
+
+
+def test_load_index_rejects_missing_embedder(
+    saved_index: tuple[Path, DenseRetriever, LexicalRetriever],
+) -> None:
+    directory, _, _ = saved_index
+    manifest = read_manifest(directory)
+    del manifest["embedder"]
+    (directory / "index.json").write_text(json.dumps(manifest), encoding="utf-8")
+    with pytest.raises(ValueError, match="'embedder' must be a non-empty string"):
+        load_index(directory)
+
+
+@pytest.mark.parametrize(
+    ("field", "value", "message"),
+    [
+        ("embedder", 7, "'embedder' must be a non-empty string"),
+        ("chunks", "four", "'chunks' must be an integer >= 0"),
+        ("dimension", True, "'dimension' must be an integer >= 1"),
+        ("dimension", 0, "'dimension' must be an integer >= 1"),
+        ("format_version", 99, "expected 1"),
+    ],
+)
+def test_load_index_rejects_invalid_manifest_fields(
+    saved_index: tuple[Path, DenseRetriever, LexicalRetriever],
+    field: str,
+    value: object,
+    message: str,
+) -> None:
+    directory, _, _ = saved_index
+    edit_manifest(directory, **{field: value})
+    with pytest.raises(ValueError, match=message):
+        load_index(directory)
+
+
+def test_load_index_rejects_mismatched_chunk_id_sets(
+    saved_index: tuple[Path, DenseRetriever, LexicalRetriever],
+    chunks: list[Chunk],
+) -> None:
+    directory, _, _ = saved_index
+    other = [make_chunk("gamma", i, chunk.text) for i, chunk in enumerate(chunks)]
+    bm25 = BM25Index()
+    bm25.upsert(other)
+    assert len(bm25) == len(other)
+    bm25.save(directory / "lexical")
+    with pytest.raises(ValueError, match="chunk ids"):
+        load_index(directory)
+
+
+def test_load_index_with_fastembed_spec_needs_no_registry(
+    saved_index: tuple[Path, DenseRetriever, LexicalRetriever],
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    directory, _, _ = saved_index
+    edit_manifest(directory, embedder=f"fastembed:{DEFAULT_FASTEMBED_MODEL}")
+    monkeypatch.setattr(fastembed_embedder, "_model_dimension", fail_registry_lookup)
+    dense, lexical = load_index(directory)
+    assert isinstance(dense.embedder, FastEmbedEmbedder)
+    assert dense.embedder.name == f"fastembed:{DEFAULT_FASTEMBED_MODEL}"
+    assert dense.store.dimension == 64
+    hits = lexical.retrieve("bm25 ranks documents by term frequency", k=1)
+    assert [hit.chunk.chunk_id for hit in hits] == ["alpha-1"]
+
+
+def test_load_index_reproduces_custom_tokenizer(tmp_path: Path, chunks: list[Chunk]) -> None:
+    dense = DenseRetriever(HashingEmbedder(dimension=64, use_bigrams=False))
+    lexical = LexicalRetriever(BM25Index(tokenizer=lambda t: t.lower().split()))
+    assert dense.index(chunks) == len(chunks)
+    assert lexical.index(chunks) == len(chunks)
+    directory = tmp_path / "index"
+    save_index(directory, dense, lexical)
+    _, reloaded = load_index(directory, tokenizer=lambda t: t.lower().split())
+    query = "BM25 RANKS documents"
+    assert ids_and_scores(reloaded.retrieve(query, k=2)) == ids_and_scores(
+        lexical.retrieve(query, k=2)
+    )
+    assert [hit.chunk.chunk_id for hit in reloaded.retrieve(query, k=1)] == ["alpha-1"]

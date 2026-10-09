@@ -110,7 +110,7 @@ class DenseRetriever:
         return self._store
 
     def index(self, chunks: Sequence[Chunk]) -> int:
-        """Embed and upsert chunks; an empty batch skips the embedder entirely."""
+        """Embed and upsert chunks; returns how many were processed (empty input: no embed)."""
         if not chunks:
             return 0
         vectors = self._embedder.embed_documents([chunk.embedding_text for chunk in chunks])
@@ -151,7 +151,7 @@ class LexicalRetriever:
         return self._index
 
     def index(self, chunks: Sequence[Chunk]) -> int:
-        """Upsert chunks into the inverted index and report how many were added."""
+        """Upsert chunks into the inverted index; returns how many chunks were processed."""
         self._index.upsert(chunks)
         return len(chunks)
 
