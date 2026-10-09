@@ -6,6 +6,21 @@ All notable changes to this project are documented here. The format follows
 
 ## [Unreleased]
 
+## [0.1.0] - 2026-10-09
+
+First tagged release: a pre-1.0 **interface release** covering milestones M1-M3
+(ingestion and chunking, indexing and retrieval, hybrid fusion and reranking). It
+passed the interface review ([REVIEW.md](REVIEW.md)). No evaluation numbers exist
+yet; retrieval quality is measured in M4. Interfaces may still change before 1.0.
+
+**Breaking changes** (relative to earlier untagged builds): document ids are
+corpus-scoped (`sha256("<corpus_id>:<source>")[:16]`), index format 2 stores
+`documents.jsonl` and rejects format-1 indexes (rebuild chunk files and indexes),
+`save_index` takes the documents, `search --json` returns a versioned object
+(`schema_version` 1) with the hits under `hits`, and reranking reports the base
+stage's rank in `ranks` instead of a `base_rank` score key. Always pass
+`--corpus-id`; the default falls back to the folder name.
+
 ### Changed
 - **Breaking:** document ids are now `sha256("<corpus_id>:<source>")[:16]`. The corpus id is set with `--corpus-id`, `RAG_CORPUS_ID` or `IngestionConfig.corpus_id`, and defaults to the slugified corpus root directory name. Ids no longer change with the ingest root, and they no longer collide across corpora. Chunk files and indexes built before this change must be rebuilt (review MAJOR 2; ADR-0006).
 - **Breaking:** index format 2 stores `documents.jsonl` (the normalized documents that chunk offsets point into). `load_index` rejects format 1 and asks for a rebuild. `save_index` takes the documents as a new argument (review MAJOR 1).
@@ -44,3 +59,6 @@ All notable changes to this project are documented here. The format follows
 - CLI (M2 review): a missing fastembed install is reported as `error: ...` (exit 2) instead of a traceback; chunking options passed with a chunks `.jsonl` input produce a warning since they have no effect.
 - Chunking overrides on the command line no longer reset `RAG_EMBEDDING_*` (and other non-chunking) settings to defaults.
 - Dense retrieval returns no hits for a query whose embedding is all zeros instead of an arbitrary list of zero-score chunks.
+
+[Unreleased]: https://github.com/miguelzzzzzzzz/CitationNeeded/compare/v0.1.0...HEAD
+[0.1.0]: https://github.com/miguelzzzzzzzz/CitationNeeded/releases/tag/v0.1.0

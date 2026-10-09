@@ -10,7 +10,7 @@ Milestones are ordered; each ends with green CI and an updated CHANGELOG.
 | M4 | Evaluation harness (SciFact + structured-doc set), benchmark reports | planned |
 | M5 | Answer generation: provider interface, extractive fallback, citations, structured output | planned |
 | M6 | FastAPI service, Dockerfile, docker build in CI | planned |
-| M7 | Hardening: error handling, perf (batching, caching), docs, v0.1.0 release | planned |
+| M7 | Hardening: error handling, perf (batching, caching), docs, full release (v0.1.0 was the M1-M3 interface release) | planned |
 
 ## M1 - Infrastructure, ingestion, chunking
 
@@ -63,4 +63,4 @@ Acceptance
 ## M7 - Hardening and release
 
 - Batching and caching of embeddings, latency profiling, structured logging.
-- Final README with benchmark tables from reports; tag v0.1.0.
+- Final README with benchmark tables from reports; tag the full release (v0.1.0, the M1-M3 interface release, was cut on 2026-10-09).

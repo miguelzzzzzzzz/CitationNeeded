@@ -11,10 +11,12 @@ index, so every citation can be re-checked); hybrid dense + BM25 retrieval with 
 schema-validated answers; and a reproducible evaluation harness so every
 design choice is backed by measured retrieval quality and latency.
 
-> **Status:** early development (see [PLAN.md](PLAN.md)). M1 (ingestion and
-> chunking), M2 (embeddings, vector index, BM25, retrievers, index/search CLI), and
-> M3 (hybrid fusion, cross-encoder reranking) are done, and all findings of the
-> review at `84bce05` are resolved ([REVIEW.md](REVIEW.md)); M4 (evaluation) is next.
+> **Status:** v0.1.0, a pre-1.0 interface release (see [PLAN.md](PLAN.md) and
+> [CHANGELOG.md](CHANGELOG.md)). M1 (ingestion and chunking), M2 (embeddings,
+> vector index, BM25, retrievers, index/search CLI), and M3 (hybrid fusion,
+> cross-encoder reranking) are done, and the interface review passed
+> ([REVIEW.md](REVIEW.md)); M4 (evaluation) is next. Interfaces may still change
+> before 1.0.
 > No benchmark results exist yet; none will be shown here until produced by a
 > committed evaluation run.
 
@@ -42,7 +44,7 @@ query -> dense + BM25 -> fusion -> reranker -> answer generator (LLM | extractiv
 
 ```bash
 pip install -e .
-rag-engine ingest path/to/docs --out chunks.jsonl --strategy structure --chunk-size 256 --chunk-overlap 32
+rag-engine ingest path/to/docs --corpus-id handbook --out chunks.jsonl --strategy structure --chunk-size 256 --chunk-overlap 32
 ```
 
 This loads Markdown, HTML, PDF, and text files, writes one JSON chunk per line
@@ -67,10 +69,17 @@ set with `--corpus-id`, `RAG_CORPUS_ID`, or `IngestionConfig.corpus_id`; see
 format 2 introduced both changes; format-1 indexes are rejected with a request
 to rebuild.
 
+**Always pass `--corpus-id`** (or set `RAG_CORPUS_ID`) when ingesting or
+indexing raw documents. Without it the corpus id falls back to the folder name,
+so renaming the folder changes every document id, and two different corpora
+that happen to live in folders with the same name (for example `docs/`) get
+the same corpus id and can collide. Pick a short, stable name per corpus
+(`^[a-z0-9][a-z0-9._-]{0,63}$`) and keep it for the corpus's lifetime.
+
 Build an index directory (dense vectors + BM25) and query it:
 
 ```bash
-rag-engine index path/to/docs --out index/            # or a chunks.jsonl from `ingest`
+rag-engine index path/to/docs --corpus-id handbook --out index/   # or a chunks.jsonl from `ingest`
 rag-engine search index/ "how does reranking work" -k 5            # dense (bge-small)
 rag-engine search index/ "BM25 k1" --mode lexical --filter source=guide.md --json
 ```

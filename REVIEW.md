@@ -74,3 +74,19 @@ Found by the automated code review of each fix:
   `content_hash` in chunk metadata (`a18aca9`).
 - A rejected `save_index` (for example, duplicate documents) fails before
   touching an existing index (`1cf8b71`).
+
+### Sign-off: Chad's re-check at `cdd892e` (2026-10-09)
+
+**Passed for the v0.1.0 interface release.** Both MAJORs and all MINORs are
+closed. The re-check confirmed three things:
+
+- citations are verified against the stored `content_hash`;
+- document ids are stable and scoped by corpus;
+- reranking keeps each stage's rank.
+
+The final review gate still runs after M7.
+
+Non-blocking advice: always pass `--corpus-id` (or `RAG_CORPUS_ID`), because
+the default falls back to the folder name. The README's usage section now says
+so and uses `--corpus-id` in its examples.
+
