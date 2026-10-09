@@ -195,3 +195,82 @@ def test_real_cross_encoder_reranks_hybrid_results(
 
     assert hits
     assert "cross-encoder reranking" in chunk_text(hits[0])
+
+
+def test_rrf_k_requires_rrf_fusion(corpus_dir: Path, tmp_path: Path, capsys: Capture) -> None:
+    index = build_index(corpus_dir, tmp_path, capsys)
+
+    code = main(
+        [
+            "search",
+            str(index),
+            "--mode",
+            "hybrid",
+            "--fusion",
+            "weighted",
+            "--rrf-k",
+            "10",
+            "retrieval ranking",
+        ]
+    )
+
+    assert code == 2
+    assert "--rrf-k requires --fusion rrf" in capsys.readouterr().err
+
+
+def test_all_zero_weights_exit_2(corpus_dir: Path, tmp_path: Path, capsys: Capture) -> None:
+    index = build_index(corpus_dir, tmp_path, capsys)
+
+    code = main(
+        [
+            "search",
+            str(index),
+            "--mode",
+            "hybrid",
+            "--weight",
+            "dense=0",
+            "--weight",
+            "lexical=0",
+            "retrieval ranking",
+        ]
+    )
+
+    assert code == 2
+    assert "at least one weight must be positive" in capsys.readouterr().err
+
+
+def test_candidates_require_hybrid_or_rerank(
+    corpus_dir: Path, tmp_path: Path, capsys: Capture
+) -> None:
+    index = build_index(corpus_dir, tmp_path, capsys)
+
+    code = main(
+        ["search", str(index), "--mode", "dense", "--candidates", "10", "retrieval ranking"]
+    )
+
+    assert code == 2
+    assert "--candidates requires --mode hybrid or --rerank" in capsys.readouterr().err
+
+
+def test_candidates_allowed_with_rerank(
+    corpus_dir: Path,
+    tmp_path: Path,
+    capsys: Capture,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    index = build_index(corpus_dir, tmp_path, capsys)
+    monkeypatch.setattr(CrossEncoderReranker, "score", _overlap_score)
+
+    hits = search_json(
+        index,
+        capsys,
+        "--mode",
+        "dense",
+        "--candidates",
+        "10",
+        "--rerank",
+        "retrieval ranking",
+    )
+
+    assert hits
+    assert [hit["rank"] for hit in hits] == list(range(1, len(hits) + 1))

@@ -134,11 +134,16 @@ def _build_parser() -> argparse.ArgumentParser:
         metavar="NAME=FLOAT",
         help="Hybrid weight for 'dense' or 'lexical' (repeatable); requires --mode hybrid.",
     )
+    # Defaulted to None so an explicit --candidates can be told apart from the
+    # omitted flag; the effective default of 50 is applied after parsing.
     search.add_argument(
         "--candidates",
         type=int,
-        default=50,
-        help="Candidate pool size for fusion and reranking (default: 50).",
+        default=None,
+        help=(
+            "Candidate pool size for fusion and reranking (default: 50); "
+            "requires --mode hybrid or --rerank."
+        ),
     )
     search.add_argument(
         "--rerank",
@@ -413,18 +418,30 @@ def cmd_search(args: argparse.Namespace) -> int:
         print(f"error: {exc}", file=sys.stderr)
         return 2
 
+    candidates = 50 if args.candidates is None else args.candidates
     try:
-        if args.candidates < 1:
+        if candidates < 1:
             raise ValueError("candidates must be positive")
+        # Rejected outside hybrid/rerank because the pool size would only be
+        # forwarded to a retriever that ignores it.
+        if args.candidates is not None and args.mode != "hybrid" and not args.rerank:
+            raise ValueError("--candidates requires --mode hybrid or --rerank")
         if args.mode != "hybrid" and any(
             value is not None for value in (args.fusion, args.rrf_k, args.weight)
         ):
             raise ValueError("--fusion/--rrf-k/--weight require --mode hybrid")
         method: FusionMethod | str = args.fusion or "rrf"
+        if args.rrf_k is not None and args.fusion == "weighted":
+            raise ValueError("--rrf-k requires --fusion rrf")
         rrf_k = 60 if args.rrf_k is None else args.rrf_k
         if rrf_k < 0:
             raise ValueError("rrf-k must be >= 0")
-        weights: Mapping[str, float] | None = _parse_weight_overrides(args.weight) or None
+        parsed_weights = _parse_weight_overrides(args.weight)
+        # Zero-weight sources still contribute their ranks (or nothing under
+        # weighted fusion), so an all-zero map would silently disable fusion.
+        if parsed_weights and all(value == 0 for value in parsed_weights.values()):
+            raise ValueError("at least one weight must be positive")
+        weights: Mapping[str, float] | None = parsed_weights or None
     except ValueError as exc:
         print(f"error: {exc}", file=sys.stderr)
         return 2
@@ -438,35 +455,35 @@ def cmd_search(args: argparse.Namespace) -> int:
         print(f"error: {exc}", file=sys.stderr)
         return 2
 
-    retriever: Retriever
-    if args.mode == "dense":
-        retriever = dense
-    elif args.mode == "lexical":
-        retriever = lexical
-    else:
-        try:
+    retriever: Retriever = dense
+    try:
+        # Both the hybrid retriever and the reranker validate their arguments in
+        # their constructors, so they share one ValueError -> exit 2 handler.
+        if args.mode == "lexical":
+            retriever = lexical
+        elif args.mode == "hybrid":
             retriever = HybridRetriever(
                 [dense, lexical],
                 method=method,
                 weights=weights,
                 rrf_k=rrf_k,
-                candidates=args.candidates,
+                candidates=candidates,
             )
-        except ValueError as exc:
-            print(f"error: {exc}", file=sys.stderr)
-            return 2
-    if args.rerank:
-        # The cross-encoder loads lazily on the first retrieve call, so a
-        # missing fastembed surfaces as an ImportError below, like the embedder.
-        retriever = RerankingRetriever(
-            retriever,
-            CrossEncoderReranker(
-                args.rerank_model,
-                cache_dir=settings.embedding.cache_dir,
-                threads=settings.embedding.threads,
-            ),
-            candidates=args.candidates,
-        )
+        if args.rerank:
+            # The cross-encoder loads lazily on the first retrieve call, so a
+            # missing fastembed surfaces as an ImportError below, like the embedder.
+            retriever = RerankingRetriever(
+                retriever,
+                CrossEncoderReranker(
+                    args.rerank_model,
+                    cache_dir=settings.embedding.cache_dir,
+                    threads=settings.embedding.threads,
+                ),
+                candidates=candidates,
+            )
+    except ValueError as exc:
+        print(f"error: {exc}", file=sys.stderr)
+        return 2
 
     try:
         hits = retriever.retrieve(args.query, args.top_k, filters or None)
