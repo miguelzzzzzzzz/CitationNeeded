@@ -12,7 +12,7 @@ from typing import Any
 
 import pytest
 
-from rag_engine.cli import _settings_from_args, main
+from rag_engine.cli import SEARCH_JSON_SCHEMA_VERSION, _settings_from_args, main
 from rag_engine.retrieval.fastembed_embedder import FastEmbedEmbedder
 
 Capture = pytest.CaptureFixture[str]
@@ -27,7 +27,9 @@ def build_index(corpus_dir: Path, tmp_path: Path, capsys: Capture, *extra: str) 
 
 def search_json(index: Path, capsys: Capture, *args: str) -> list[dict[str, Any]]:
     assert main(["search", str(index), *args, "--json"]) == 0
-    result: list[dict[str, Any]] = json.loads(capsys.readouterr().out)
+    payload = json.loads(capsys.readouterr().out)
+    assert payload["schema_version"] == SEARCH_JSON_SCHEMA_VERSION
+    result: list[dict[str, Any]] = payload["hits"]
     return result
 
 

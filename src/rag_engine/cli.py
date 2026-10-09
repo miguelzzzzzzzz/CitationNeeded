@@ -48,6 +48,10 @@ from rag_engine.retrieval import (
 
 _TEXT_PREVIEW_CHARS = 200
 
+# Version of the ``search --json`` payload; bump on any breaking change to its
+# keys. 1: {"schema_version", "query", "mode", "rerank", "hits": [hit, ...]}.
+SEARCH_JSON_SCHEMA_VERSION = 1
+
 
 def _add_corpus_arg(parser: argparse.ArgumentParser) -> None:
     parser.add_argument(
@@ -535,7 +539,15 @@ def cmd_search(args: argparse.Namespace) -> int:
         return 2
 
     if args.json:
-        print(json.dumps([hit.to_dict() for hit in hits], indent=2))
+        payload = {
+            "schema_version": SEARCH_JSON_SCHEMA_VERSION,
+            "query": args.query,
+            "mode": args.mode,
+            "rerank": bool(args.rerank),
+            "hits": [hit.to_dict() for hit in hits],
+        }
+        # Scores are finite by construction; allow_nan=False keeps the output strict JSON.
+        print(json.dumps(payload, indent=2, allow_nan=False))
         return 0
     if not hits:
         print("no results", file=sys.stderr)

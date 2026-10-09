@@ -83,9 +83,27 @@ rag-engine search index/ "how does reranking work" --mode hybrid --rerank --cand
 ```
 
 Each hit carries its rank, score, retriever, provenance (document and chunk id,
-source file, heading path, page, character span), and the component scores that
-produced it (dense/lexical scores after fusion, first-stage score and rank after
-reranking). Metadata filters are applied inside every retriever before ranking.
+source file, `content_hash`, heading path, `page`/`page_end`, character span),
+and how it got there: `components` maps each upstream stage name to the score it
+gave the chunk and `ranks` maps the same stage names to the 1-based rank it had
+there (e.g. `{"dense": 2, "lexical": 1, "hybrid": 3}` after reranking a hybrid
+search). A wrapper stage's name extends its base's (`hybrid` -> `hybrid+rerank`),
+so nested stages never overwrite each other. Metadata filters are applied inside
+every retriever before ranking.
+
+`search --json` prints a versioned object, documented here as schema version 1:
+
+```json
+{"schema_version": 1, "query": "...", "mode": "hybrid", "rerank": true,
+ "hits": [{"rank": 1, "score": 0.93, "retriever": "hybrid+rerank",
+           "components": {...}, "ranks": {...}, "doc_id": "...", "chunk_id": "...",
+           "source": "...", "content_hash": "...", "heading_path": [...],
+           "page": null, "page_end": null, "start_char": 0, "end_char": 120,
+           "text": "..."}]}
+```
+
+`components`/`ranks` are omitted for a single retriever. Any breaking change to
+these keys bumps `schema_version`.
 `--rerank` scores at most `--candidates` (query, chunk) pairs with the
 `Xenova/ms-marco-MiniLM-L-6-v2` cross-encoder (~80 MB, CPU). `--embedder hashing`
 builds a fully offline index for testing. Which configuration retrieves best is
