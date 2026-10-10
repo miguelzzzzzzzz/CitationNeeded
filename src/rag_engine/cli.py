@@ -235,6 +235,19 @@ def _build_parser() -> argparse.ArgumentParser:
         help="Candidate pool for hybrid/rerank (default: 50).",
     )
     evaluate.add_argument(
+        "--depth",
+        type=int,
+        default=50,
+        help="Initial chunk depth, the same for every mode (default: 50); each query "
+        "over-fetches until it has --top-k unique documents or the index is exhausted.",
+    )
+    evaluate.add_argument(
+        "--max-depth",
+        type=int,
+        default=None,
+        help="Cap on the over-fetch depth (default: number of indexed chunks).",
+    )
+    evaluate.add_argument(
         "--chunk-strategy",
         choices=["fixed", "recursive", "structure"],
         default=None,
@@ -645,6 +658,8 @@ def cmd_evaluate(args: argparse.Namespace) -> int:
                 fusion=args.fusion,
                 top_k=args.top_k,
                 candidates=args.candidates,
+                depth=args.depth,
+                max_depth=args.max_depth,
                 chunk_strategy=chunk_strategy,
                 chunk_size=args.chunk_size,
                 chunk_overlap=args.chunk_overlap,
@@ -667,6 +682,8 @@ def cmd_evaluate(args: argparse.Namespace) -> int:
                 fusion=args.fusion,
                 top_k=args.top_k,
                 candidates=args.candidates,
+                depth=args.depth,
+                max_depth=args.max_depth,
                 chunk_strategy=chunk_strategy,
                 chunk_size=args.chunk_size,
                 chunk_overlap=args.chunk_overlap,
@@ -681,10 +698,15 @@ def cmd_evaluate(args: argparse.Namespace) -> int:
         "dataset": report.dataset_name,
         "checksum": report.dataset_checksum,
         "git_sha": report.git_sha,
+        "git_dirty": report.git_dirty,
+        "smoke_only": report.smoke_only,
         "n_documents": report.n_documents,
         "n_queries": report.n_queries,
+        "n_queries_unlabelled": report.n_queries_unlabelled,
+        "n_queries_skipped_no_relevant": report.n_queries_skipped_no_relevant,
         "n_chunks": report.n_chunks,
         "metrics": report.metrics,
+        "retrieval": report.retrieval,
         "latency_ms": report.latency_ms,
     }
     print(json.dumps(summary, indent=2, allow_nan=False))

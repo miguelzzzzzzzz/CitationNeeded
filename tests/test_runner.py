@@ -83,7 +83,7 @@ def test_build_scifact_documents_and_eval(tmp_path: Path) -> None:
     assert "ndcg@10" in report.metrics["lexical"]
     out = write_report(report, tmp_path / "mini.json")
     payload = json.loads(out.read_text(encoding="utf-8"))
-    assert payload["schema_version"] == 1
+    assert payload["schema_version"] == 2
     assert payload["dataset_checksum"] == "mini"
     assert "config" in payload and "hardware" in payload
 
