@@ -1,0 +1,82 @@
+{
+  "schema_version": 1,
+  "created_at": "2026-10-10T01:16:35.347163+00:00",
+  "git_sha": "bf0c83b9b6940f2a5e09df40cbc41a26a4357d48",
+  "hardware": {
+    "platform": "Linux-6.12.94+-x86_64-with-glibc2.41",
+    "processor": "",
+    "python": "3.13.5",
+    "cpu_count": 8
+  },
+  "config": {
+    "dataset": "scifact",
+    "split": "test",
+    "modes": [
+      "dense",
+      "lexical",
+      "hybrid"
+    ],
+    "embedder": "hashing",
+    "fusion": "rrf",
+    "rrf_k": 60,
+    "candidates": 50,
+    "top_k": 10,
+    "chunk_strategy": "fixed",
+    "chunk_size": 512,
+    "chunk_overlap": 64,
+    "corpus_id": "scifact",
+    "rerank_model": "Xenova/ms-marco-MiniLM-L-6-v2"
+  },
+  "dataset_checksum": "5f7d1de60b170fc8027bb7898e2efca1",
+  "dataset_name": "scifact/test",
+  "n_documents": 5183,
+  "n_queries": 300,
+  "n_chunks": 5226,
+  "metrics": {
+    "dense": {
+      "recall@1": 0.20722222222222222,
+      "hit@1": 0.21333333333333335,
+      "recall@5": 0.3011111111111111,
+      "hit@5": 0.31,
+      "recall@10": 0.3619444444444444,
+      "hit@10": 0.37333333333333335,
+      "mrr@10": 0.2583743386243386,
+      "ndcg@10": 0.27979394360844656
+    },
+    "lexical": {
+      "recall@1": 0.5375,
+      "hit@1": 0.5533333333333333,
+      "recall@5": 0.7259444444444444,
+      "hit@5": 0.75,
+      "recall@10": 0.7907777777777778,
+      "hit@10": 0.81,
+      "mrr@10": 0.635867724867725,
+      "ndcg@10": 0.6690794488571239
+    },
+    "hybrid": {
+      "recall@1": 0.335,
+      "hit@1": 0.35,
+      "recall@5": 0.5601111111111111,
+      "hit@5": 0.5833333333333334,
+      "recall@10": 0.6978888888888888,
+      "hit@10": 0.72,
+      "mrr@10": 0.4514232804232803,
+      "ndcg@10": 0.5024943496515941
+    }
+  },
+  "latency_ms": {
+    "dense": {
+      "retrieve_p50": 0.16567399143241346,
+      "retrieve_p95": 0.22471699048765004
+    },
+    "lexical": {
+      "retrieve_p50": 5.127491982420906,
+      "retrieve_p95": 8.325972012244165
+    },
+    "hybrid": {
+      "retrieve_p50": 5.914816982112825,
+      "retrieve_p95": 9.56750800833106
+    }
+  },
+  "notes": "Harness smoke with HashingEmbedder (not a retrieval-quality claim). Lexical >> dense is expected for feature hashing; re-run with --embedder fastembed before publishing SciFact numbers in the README."
+}

@@ -7,6 +7,8 @@ Commands:
   chunks JSONL file (or by ingesting documents) and save an index directory.
 * ``search INDEX_DIR QUERY``: query a saved index directory with the dense,
   lexical, or hybrid retriever, optionally reranking the fused candidates.
+* ``evaluate``: run the M4 evaluation harness (SciFact or structured-doc set)
+  and write a JSON report under ``evals/results/``.
 """
 
 from __future__ import annotations
@@ -30,6 +32,7 @@ from rag_engine.documents import (
     verify_chunks,
     write_documents,
 )
+from rag_engine.eval.runner import EvalConfig, run_scifact_eval, run_structured_eval
 from rag_engine.ingestion import ingest_path
 from rag_engine.models import Chunk, Document
 from rag_engine.retrieval import (
@@ -176,6 +179,74 @@ def _build_parser() -> argparse.ArgumentParser:
         help="Cross-encoder model used by --rerank.",
     )
     search.add_argument("--json", action="store_true", help="Print hits as JSON.")
+
+    evaluate = sub.add_parser(
+        "evaluate",
+        help="Run retrieval evaluation and write a JSON report under evals/results/.",
+    )
+    evaluate.add_argument(
+        "--dataset",
+        choices=["scifact", "structured"],
+        required=True,
+        help="Which evaluation corpus to run.",
+    )
+    evaluate.add_argument(
+        "--data-dir",
+        type=Path,
+        default=None,
+        help="SciFact cache dir (default: evals/datasets) or structured set root "
+        "(default: evals/structured).",
+    )
+    evaluate.add_argument(
+        "--results-dir",
+        type=Path,
+        default=Path("evals/results"),
+        help="Directory for JSON reports (default: evals/results).",
+    )
+    evaluate.add_argument(
+        "--split",
+        default="test",
+        help="SciFact split to evaluate (default: test).",
+    )
+    evaluate.add_argument(
+        "--mode",
+        action="append",
+        dest="modes",
+        choices=["dense", "lexical", "hybrid", "hybrid+rerank"],
+        default=None,
+        help="Retriever mode to include (repeatable; default: dense lexical hybrid).",
+    )
+    evaluate.add_argument(
+        "--embedder",
+        default="hashing",
+        help="Embedder spec (default: hashing for offline smoke runs).",
+    )
+    evaluate.add_argument(
+        "--fusion",
+        choices=["rrf", "weighted"],
+        default="rrf",
+        help="Hybrid fusion method (default: rrf).",
+    )
+    evaluate.add_argument("--top-k", type=int, default=10, help="Metric cut-off k.")
+    evaluate.add_argument(
+        "--candidates",
+        type=int,
+        default=50,
+        help="Candidate pool for hybrid/rerank (default: 50).",
+    )
+    evaluate.add_argument(
+        "--chunk-strategy",
+        choices=["fixed", "recursive", "structure"],
+        default=None,
+        help="Chunking strategy (default: fixed for SciFact, structure for structured).",
+    )
+    evaluate.add_argument("--chunk-size", type=int, default=512)
+    evaluate.add_argument("--chunk-overlap", type=int, default=64)
+    evaluate.add_argument(
+        "--corpus-id",
+        default=None,
+        help="Corpus id for document ids (default depends on dataset).",
+    )
     return parser
 
 
@@ -558,6 +629,68 @@ def cmd_search(args: argparse.Namespace) -> int:
     return 0
 
 
+def cmd_evaluate(args: argparse.Namespace) -> int:
+    """Run the M4 harness and print a short summary of the written report."""
+    modes = tuple(args.modes) if args.modes else ("dense", "lexical", "hybrid")
+    if args.dataset == "scifact":
+        data_dir = args.data_dir or Path("evals/datasets")
+        chunk_strategy = args.chunk_strategy or "fixed"
+        corpus_id = args.corpus_id or "scifact"
+        try:
+            config = EvalConfig(
+                dataset="scifact",
+                split=args.split,
+                modes=modes,
+                embedder=args.embedder,
+                fusion=args.fusion,
+                top_k=args.top_k,
+                candidates=args.candidates,
+                chunk_strategy=chunk_strategy,
+                chunk_size=args.chunk_size,
+                chunk_overlap=args.chunk_overlap,
+                corpus_id=corpus_id,
+            )
+            report = run_scifact_eval(data_dir, config=config, results_dir=args.results_dir)
+        except (ValueError, FileNotFoundError, OSError) as exc:
+            print(f"error: {exc}", file=sys.stderr)
+            return 2
+    else:
+        data_dir = args.data_dir or Path("evals/structured")
+        chunk_strategy = args.chunk_strategy or "structure"
+        corpus_id = args.corpus_id or "structured-eval"
+        try:
+            config = EvalConfig(
+                dataset="structured",
+                split=args.split,
+                modes=modes,
+                embedder=args.embedder,
+                fusion=args.fusion,
+                top_k=args.top_k,
+                candidates=args.candidates,
+                chunk_strategy=chunk_strategy,
+                chunk_size=args.chunk_size,
+                chunk_overlap=args.chunk_overlap,
+                corpus_id=corpus_id,
+            )
+            report = run_structured_eval(data_dir, config=config, results_dir=args.results_dir)
+        except (ValueError, FileNotFoundError, OSError) as exc:
+            print(f"error: {exc}", file=sys.stderr)
+            return 2
+
+    summary = {
+        "dataset": report.dataset_name,
+        "checksum": report.dataset_checksum,
+        "git_sha": report.git_sha,
+        "n_documents": report.n_documents,
+        "n_queries": report.n_queries,
+        "n_chunks": report.n_chunks,
+        "metrics": report.metrics,
+        "latency_ms": report.latency_ms,
+    }
+    print(json.dumps(summary, indent=2, allow_nan=False))
+    return 0
+
+
 def main(argv: list[str] | None = None) -> int:
     parser = _build_parser()
     args = parser.parse_args(argv)
@@ -567,6 +700,8 @@ def main(argv: list[str] | None = None) -> int:
         return cmd_index(args)
     if args.command == "search":
         return cmd_search(args)
+    if args.command == "evaluate":
+        return cmd_evaluate(args)
     parser.error(f"unknown command {args.command!r}")
     return 2
 

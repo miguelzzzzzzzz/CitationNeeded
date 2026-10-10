@@ -23,6 +23,15 @@ Short-horizon task list. Milestones and acceptance criteria live in `PLAN.md`.
 - [x] `rag-engine search --mode hybrid --fusion/--weight/--rrf-k/--candidates --rerank`
 - [x] Lexical search on a fastembed-built index works without fastembed installed
 
+
+## M4 - Evaluation harness (done)
+- [x] SciFact loader (download + MD5 `5f7d1de60b170fc8027bb7898e2efca1`), data under `evals/datasets/` (gitignored)
+- [x] Structured-doc eval set under `evals/structured/` with hand-labeled qrels
+- [x] Metrics: Recall@{1,5,10}, Hit@{1,5,10}, MRR@10, nDCG@10 with hand-computed unit tests
+- [x] Runner + `rag-engine evaluate` writing JSON reports (config, checksum, git SHA, hardware)
+- [x] `scripts/eval_table.py` comparison table generator
+- [ ] Optional: full SciFact run with fastembed (±rerank) and README table copied from that report
+
 ## Review of 84bce05 (done, see REVIEW.md)
 - [x] Corpus-scoped document ids (`corpus_id` + relative path) with pinned-id, stability and no-collision tests
 - [x] `documents.jsonl` beside chunk files and in the index; citations verified on build and load; index format 2

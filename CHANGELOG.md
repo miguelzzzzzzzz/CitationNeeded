@@ -6,6 +6,9 @@ All notable changes to this project are documented here. The format follows
 
 ## [Unreleased]
 
+### Added
+- Evaluation harness (M4): `rag_engine.eval.metrics` (Recall@{1,5,10}, Hit@{1,5,10}, MRR@10, nDCG@10) with hand-computed unit tests; BEIR SciFact loader with MD5 verification (`evals/datasets/` gitignored); in-repo structured-doc set under `evals/structured/`; `run_evaluation` / `run_scifact_eval` / `run_structured_eval` writing JSON reports under `evals/results/`; `rag-engine evaluate` CLI; `scripts/eval_table.py` for README tables. Structured smoke report committed (hashing embedder — not a retrieval-quality claim).
+
 ## [0.1.0] - 2026-10-09
 
 First tagged release: a pre-1.0 **interface release** covering milestones M1-M3

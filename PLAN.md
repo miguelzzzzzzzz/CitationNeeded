@@ -7,7 +7,7 @@ Milestones are ordered; each ends with green CI and an updated CHANGELOG.
 | M1 | Project infrastructure, ingestion, configurable chunking | done |
 | M2 | Embeddings, vector store, BM25 index, retrieval interface | done |
 | M3 | Hybrid fusion (RRF / weighted), metadata filters, cross-encoder reranking | done |
-| M4 | Evaluation harness (SciFact + structured-doc set), benchmark reports | planned |
+| M4 | Evaluation harness (SciFact + structured-doc set), benchmark reports | done |
 | M5 | Answer generation: provider interface, extractive fallback, citations, structured output | planned |
 | M6 | FastAPI service, Dockerfile, docker build in CI | planned |
 | M7 | Hardening: error handling, perf (batching, caching), docs, full release (v0.1.0 was the M1-M3 interface release) | planned |
@@ -48,6 +48,11 @@ Acceptance
 - Dataset loader for BEIR SciFact (download + checksum), structured-doc eval set.
 - Metric functions (Recall@K, Hit@K, MRR, nDCG) with unit tests.
 - Runner producing JSON reports; comparison table generator for README.
+- Status (2026-10-10): harness landed (`rag_engine.eval`, `rag-engine evaluate`,
+  `scripts/eval_table.py`). Structured-doc smoke report committed under
+  `evals/results/` (hashing embedder — not a retrieval-quality claim). Full
+  SciFact + fastembed benchmark optional follow-up; do not put numbers in the
+  README until a committed SciFact report exists.
 
 ## M5 - Answers
 

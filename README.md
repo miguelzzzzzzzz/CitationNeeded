@@ -12,13 +12,12 @@ schema-validated answers; and a reproducible evaluation harness so every
 design choice is backed by measured retrieval quality and latency.
 
 > **Status:** v0.1.0, a pre-1.0 interface release (see [PLAN.md](PLAN.md) and
-> [CHANGELOG.md](CHANGELOG.md)). M1 (ingestion and chunking), M2 (embeddings,
-> vector index, BM25, retrievers, index/search CLI), and M3 (hybrid fusion,
-> cross-encoder reranking) are done, and the interface review passed
-> ([REVIEW.md](REVIEW.md)); M4 (evaluation) is next. Interfaces may still change
-> before 1.0.
-> No benchmark results exist yet; none will be shown here until produced by a
-> committed evaluation run.
+> [CHANGELOG.md](CHANGELOG.md)). M1–M3 (ingestion through hybrid retrieval) are
+> done and passed interface review ([REVIEW.md](REVIEW.md)); M4 (evaluation
+> harness) is done. Interfaces may still change before 1.0.
+> No SciFact quality numbers are shown here yet. A structured-doc smoke report
+> under `evals/results/` validates the harness only (hashing embedder). Copy
+> README tables from committed reports via `python scripts/eval_table.py`.
 
 ## Why this is not "chat with a PDF"
 
@@ -117,13 +116,27 @@ these keys bumps `schema_version`.
 `--rerank` scores at most `--candidates` (query, chunk) pairs with the
 `Xenova/ms-marco-MiniLM-L-6-v2` cross-encoder (~80 MB, CPU). `--embedder hashing`
 builds a fully offline index for testing. Which configuration retrieves best is
-measured in M4; no quality numbers are claimed before then.
+measured by the M4 harness (`rag-engine evaluate`); SciFact quality numbers appear here only after a committed SciFact report exists.
 
 ## Naming
 
 The repository is called *Citation Needed*. The Python distribution
 (`production-rag-engine`), import package (`rag_engine`), and CLI
 (`rag-engine`) keep their descriptive names.
+
+## Evaluation
+
+```bash
+# Structured-doc smoke (in-repo fixtures; hashing embedder — harness check only)
+rag-engine evaluate --dataset structured --embedder hashing
+
+# SciFact (downloads into evals/datasets/, gitignored; MD5-verified)
+rag-engine evaluate --dataset scifact --embedder hashing
+# For real dense quality: pip install -e ".[embeddings]" and --embedder fastembed
+```
+
+JSON reports land in `evals/results/`. Render a Markdown table with
+`python scripts/eval_table.py`. Details: [evals/README.md](evals/README.md).
 
 ## Development
 

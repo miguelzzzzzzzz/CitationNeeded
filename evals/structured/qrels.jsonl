@@ -1,0 +1,8 @@
+{"query_id": "q_glycolysis_atp", "text": "How many ATP does glycolysis yield per glucose?", "relevant_docs": ["metabolism"], "relevant_sections": [["Glycolysis"]]}
+{"query_id": "q_krebs_location", "text": "Where does the citric acid cycle occur?", "relevant_docs": ["metabolism"], "relevant_sections": [["Krebs Cycle"]]}
+{"query_id": "q_carbon_tax", "text": "What is a carbon tax?", "relevant_docs": ["climate_policy"], "relevant_sections": [["Carbon Pricing"]]}
+{"query_id": "q_rps", "text": "What do renewable portfolio standards require?", "relevant_docs": ["climate_policy"], "relevant_sections": [["Renewable Mandates"]]}
+{"query_id": "q_quicksort_worst", "text": "What is the worst-case complexity of quicksort?", "relevant_docs": ["sorting_algorithms"], "relevant_sections": [["Quicksort"]]}
+{"query_id": "q_mergesort_memory", "text": "How much extra memory does mergesort use?", "relevant_docs": ["sorting_algorithms"], "relevant_sections": [["Mergesort"]]}
+{"query_id": "q_aerobic_atp", "text": "Where is most ATP produced under aerobic conditions?", "relevant_docs": ["metabolism"], "relevant_sections": [["Electron Transport"]]}
+{"query_id": "q_adaptation", "text": "What do climate adaptation funds finance?", "relevant_docs": ["climate_policy"], "relevant_sections": [["Adaptation Funding"]]}
