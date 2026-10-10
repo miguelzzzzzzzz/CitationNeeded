@@ -30,7 +30,13 @@ Short-horizon task list. Milestones and acceptance criteria live in `PLAN.md`.
 - [x] Metrics: Recall@{1,5,10}, Hit@{1,5,10}, MRR@10, nDCG@10 with hand-computed unit tests
 - [x] Runner + `rag-engine evaluate` writing JSON reports (config, checksum, git SHA, hardware)
 - [x] `scripts/eval_table.py` comparison table generator
-- [ ] Optional: full SciFact run with fastembed (±rerank) and README table copied from that report
+- [ ] Optional: full SciFact run with fastembed (±rerank) and README table copied from that report (after review)
+
+## Review of M4 at 96b3c33 (done, see REVIEW.md)
+- [x] Equal retrieval depth across modes with over-fetch to `top_k` unique docs; depth recorded in reports
+- [x] Untimed warm-up per mode; `git_dirty` in reports; all-non-relevant queries skipped and counted
+- [x] Structured set labeled smoke-only in reports and docs
+- [x] Coverage back above 96%
 
 ## Review of 84bce05 (done, see REVIEW.md)
 - [x] Corpus-scoped document ids (`corpus_id` + relative path) with pinned-id, stability and no-collision tests

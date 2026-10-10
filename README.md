@@ -15,9 +15,10 @@ design choice is backed by measured retrieval quality and latency.
 > [CHANGELOG.md](CHANGELOG.md)). M1–M3 (ingestion through hybrid retrieval) are
 > done and passed interface review ([REVIEW.md](REVIEW.md)); M4 (evaluation
 > harness) is done. Interfaces may still change before 1.0.
-> No SciFact quality numbers are shown here yet. A structured-doc smoke report
-> under `evals/results/` validates the harness only (hashing embedder). Copy
-> README tables from committed reports via `python scripts/eval_table.py`.
+> No SciFact quality numbers are shown here yet. The committed hashing reports
+> under `evals/results/` validate the harness only, and the 3-document /
+> 8-query structured set is smoke-only. Copy README tables from committed
+> reports via `python scripts/eval_table.py`.
 
 ## Why this is not "chat with a PDF"
 
@@ -134,6 +135,14 @@ rag-engine evaluate --dataset structured --embedder hashing
 rag-engine evaluate --dataset scifact --embedder hashing
 # For real dense quality: pip install -e ".[embeddings]" and --embedder fastembed
 ```
+
+Every mode is compared at the same retrieval depth (`--depth`, default 50
+chunks), and each query over-fetches until it has `--top-k` unique documents.
+Before timing, each mode runs one untimed warm-up query. Reports record the
+depth used, `git_sha` plus `git_dirty`, and how many queries were skipped
+because they have no relevant judgement. The structured set (3 docs, 8
+queries) is a smoke test: its reports carry `"smoke_only": true` and support
+no quality claims.
 
 JSON reports land in `evals/results/`. Render a Markdown table with
 `python scripts/eval_table.py`. Details: [evals/README.md](evals/README.md).

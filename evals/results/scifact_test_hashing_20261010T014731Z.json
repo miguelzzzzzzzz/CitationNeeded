@@ -1,7 +1,8 @@
 {
-  "schema_version": 1,
-  "created_at": "2026-10-10T01:16:35.347163+00:00",
-  "git_sha": "bf0c83b9b6940f2a5e09df40cbc41a26a4357d48",
+  "schema_version": 2,
+  "created_at": "2026-10-10T01:47:31.762485+00:00",
+  "git_sha": "e718f74b4b868cc607daa374260c2c45638a3d8d",
+  "git_dirty": false,
   "hardware": {
     "platform": "Linux-6.12.94+-x86_64-with-glibc2.41",
     "processor": "",
@@ -21,6 +22,8 @@
     "rrf_k": 60,
     "candidates": 50,
     "top_k": 10,
+    "depth": 50,
+    "max_depth": null,
     "chunk_strategy": "fixed",
     "chunk_size": 512,
     "chunk_overlap": 64,
@@ -31,6 +34,8 @@
   "dataset_name": "scifact/test",
   "n_documents": 5183,
   "n_queries": 300,
+  "n_queries_unlabelled": 0,
+  "n_queries_skipped_no_relevant": 0,
   "n_chunks": 5226,
   "metrics": {
     "dense": {
@@ -64,19 +69,43 @@
       "ndcg@10": 0.5024943496515941
     }
   },
-  "latency_ms": {
+  "retrieval": {
     "dense": {
-      "retrieve_p50": 0.16567399143241346,
-      "retrieve_p95": 0.22471699048765004
+      "initial_depth": 50.0,
+      "max_depth": 5226.0,
+      "max_depth_used": 50.0,
+      "mean_depth_used": 50.0,
+      "queries_short_of_k": 0.0
     },
     "lexical": {
-      "retrieve_p50": 5.127491982420906,
-      "retrieve_p95": 8.325972012244165
+      "initial_depth": 50.0,
+      "max_depth": 5226.0,
+      "max_depth_used": 50.0,
+      "mean_depth_used": 50.0,
+      "queries_short_of_k": 0.0
     },
     "hybrid": {
-      "retrieve_p50": 5.914816982112825,
-      "retrieve_p95": 9.56750800833106
+      "initial_depth": 50.0,
+      "max_depth": 5226.0,
+      "max_depth_used": 50.0,
+      "mean_depth_used": 50.0,
+      "queries_short_of_k": 0.0
     }
   },
-  "notes": "Harness smoke with HashingEmbedder (not a retrieval-quality claim). Lexical >> dense is expected for feature hashing; re-run with --embedder fastembed before publishing SciFact numbers in the README."
+  "latency_ms": {
+    "dense": {
+      "retrieve_p50": 0.26654201792553067,
+      "retrieve_p95": 0.4755580157507211
+    },
+    "lexical": {
+      "retrieve_p50": 5.107912002131343,
+      "retrieve_p95": 8.481052005663514
+    },
+    "hybrid": {
+      "retrieve_p50": 5.846063984790817,
+      "retrieve_p95": 9.40384398563765
+    }
+  },
+  "notes": "",
+  "smoke_only": false
 }

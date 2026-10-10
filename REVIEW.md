@@ -90,3 +90,48 @@ Non-blocking advice: always pass `--corpus-id` (or `RAG_CORPUS_ID`), because
 the default falls back to the folder name. The README's usage section now says
 so and uses `--corpus-id` in its examples.
 
+## Chad's review of M4 at `96b3c33` (2026-10-10)
+
+Scope: the M4 evaluation harness. Result: the metrics math is correct, with
+1 MAJOR and 4 MINOR findings. All of them are resolved.
+
+### MAJOR: modes were not compared at equal depth (`runner.py:301`)
+
+Dense and lexical fetched `top_k` (10) chunks and hybrid fetched `candidates`
+(50). Hits were then collapsed to unique documents and cut to 10, so a baseline
+could be scored on fewer than 10 documents. On real SciFact, lexical was short
+on 9/300 queries.
+
+Resolution, [`9f236ba`](https://github.com/miguelzzzzzzzz/CitationNeeded/commit/9f236ba):
+
+- Every mode starts at the same chunk depth: `EvalConfig.depth`, default 50,
+  raised to at least `top_k`.
+- `retrieve_documents` doubles the depth until it has `top_k` unique documents,
+  or until the index or the optional `max_depth` cap is exhausted.
+- Each report records per-mode `initial_depth`, `max_depth`,
+  `max_depth_used`, `mean_depth_used` and `queries_short_of_k`.
+- `rag-engine evaluate` gains `--depth` and `--max-depth`.
+- `tests/test_runner_depth.py` builds a corpus where one document owns every
+  top chunk. It checks that all modes still reach `top_k` unique documents by
+  over-fetching, and that a tight `max_depth` cap is reported as short.
+
+### MINOR findings
+
+| Finding | Resolution |
+| --- | --- |
+| No warm-up before latency timing | Each mode runs one untimed warm-up retrieval before timing. It uses a fixed query that is never evaluated, so no scored query is pre-cached ([`9f236ba`](https://github.com/miguelzzzzzzzz/CitationNeeded/commit/9f236ba)). |
+| Report records the git SHA but not a dirty working tree | Reports carry `git_dirty` next to `git_sha` (from `git status --porcelain --untracked-files=no`; `null` outside a checkout) ([`9f236ba`](https://github.com/miguelzzzzzzzz/CitationNeeded/commit/9f236ba)). |
+| Queries whose qrels are all non-relevant are scored 0 | They are skipped and counted in `n_queries_skipped_no_relevant`. Queries with no qrels are counted in `n_queries_unlabelled`. `n_queries` counts scored queries only ([`9f236ba`](https://github.com/miguelzzzzzzzz/CitationNeeded/commit/9f236ba)). |
+| Structured set (3 docs / 8 queries) presented like a benchmark | Chosen fix: label it smoke-only rather than score by section. Its reports set `smoke_only: true` with a note, and the README and `evals/README.md` say so. Section-level scoring via `relevant_sections` was not adopted: it would add a second metric definition for an 8-query set that cannot support quality claims anyway ([`9f236ba`](https://github.com/miguelzzzzzzzz/CitationNeeded/commit/9f236ba)). |
+
+### Also fixed
+
+- Coverage had dropped to 95.55% at `96b3c33`, below the 96% bar.
+  [`e718f74`](https://github.com/miguelzzzzzzzz/CitationNeeded/commit/e718f74) adds error-path tests for the structured loader, the
+  runner and `evaluate --dataset scifact`.
+- The automated review of the fix led to two more changes: the warm-up query
+  no longer coincides with the first scored query, and `queries_short_of_k`
+  is documented as covering both index exhaustion and the depth cap.
+- The report `schema_version` is now 2. The committed hashing smoke reports
+  were regenerated at `e718f74` with the new schema and a clean tree.
+

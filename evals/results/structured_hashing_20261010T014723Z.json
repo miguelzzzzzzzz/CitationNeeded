@@ -1,7 +1,8 @@
 {
-  "schema_version": 1,
-  "created_at": "2026-10-10T01:13:01.111209+00:00",
-  "git_sha": "bf0c83b9b6940f2a5e09df40cbc41a26a4357d48",
+  "schema_version": 2,
+  "created_at": "2026-10-10T01:47:23.913929+00:00",
+  "git_sha": "e718f74b4b868cc607daa374260c2c45638a3d8d",
+  "git_dirty": false,
   "hardware": {
     "platform": "Linux-6.12.94+-x86_64-with-glibc2.41",
     "processor": "",
@@ -19,8 +20,10 @@
     "embedder": "hashing",
     "fusion": "rrf",
     "rrf_k": 60,
-    "candidates": 10,
-    "top_k": 5,
+    "candidates": 50,
+    "top_k": 10,
+    "depth": 50,
+    "max_depth": null,
     "chunk_strategy": "structure",
     "chunk_size": 512,
     "chunk_overlap": 64,
@@ -31,6 +34,8 @@
   "dataset_name": "structured",
   "n_documents": 3,
   "n_queries": 8,
+  "n_queries_unlabelled": 0,
+  "n_queries_skipped_no_relevant": 0,
   "n_chunks": 9,
   "metrics": {
     "dense": {
@@ -64,19 +69,43 @@
       "ndcg@10": 1.0
     }
   },
-  "latency_ms": {
+  "retrieval": {
     "dense": {
-      "retrieve_p50": 0.08001600508578122,
-      "retrieve_p95": 0.44860297930426896
+      "initial_depth": 9.0,
+      "max_depth": 9.0,
+      "max_depth_used": 9.0,
+      "mean_depth_used": 9.0,
+      "queries_short_of_k": 8.0
     },
     "lexical": {
-      "retrieve_p50": 0.018103019101545215,
-      "retrieve_p95": 0.039288977859541774
+      "initial_depth": 9.0,
+      "max_depth": 9.0,
+      "max_depth_used": 9.0,
+      "mean_depth_used": 9.0,
+      "queries_short_of_k": 8.0
     },
     "hybrid": {
-      "retrieve_p50": 0.1284030149690807,
-      "retrieve_p95": 0.16381399473175406
+      "initial_depth": 9.0,
+      "max_depth": 9.0,
+      "max_depth_used": 9.0,
+      "mean_depth_used": 9.0,
+      "queries_short_of_k": 8.0
     }
   },
-  "notes": "Structured-doc harness smoke with HashingEmbedder. Perfect scores reflect a tiny keyword-aligned fixture set, not SciFact quality."
+  "latency_ms": {
+    "dense": {
+      "retrieve_p50": 0.08720500045455992,
+      "retrieve_p95": 0.11766099487431347
+    },
+    "lexical": {
+      "retrieve_p50": 0.023858010536059737,
+      "retrieve_p95": 0.031983014196157455
+    },
+    "hybrid": {
+      "retrieve_p50": 0.1468840055167675,
+      "retrieve_p95": 0.15242001973092556
+    }
+  },
+  "notes": "smoke test only: 3 documents / 8 queries, too small for quality claims; scored at document level (relevant_sections not used)",
+  "smoke_only": true
 }

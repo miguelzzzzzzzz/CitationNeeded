@@ -6,6 +6,10 @@ All notable changes to this project are documented here. The format follows
 
 ## [Unreleased]
 
+### Fixed
+- Evaluation (M4 review): every mode is compared at the same retrieval depth. Each starts at `EvalConfig.depth` (default 50, at least `top_k`) and over-fetches until it has `top_k` unique documents or the index or `max_depth` is exhausted. Previously dense/lexical fetched only `top_k` chunks while hybrid fetched 50, so baselines could be scored on fewer documents. Reports record per-mode depth statistics and `queries_short_of_k`; `rag-engine evaluate` gains `--depth`/`--max-depth`.
+- Evaluation reports: one untimed warm-up per mode before latency timing; `git_dirty` recorded with `git_sha`; queries with no relevant grade are skipped and counted (`n_queries_skipped_no_relevant`, `n_queries_unlabelled`) instead of scored 0; structured-set reports are flagged `smoke_only`; report `schema_version` 2.
+
 ### Added
 - Evaluation harness (M4): `rag_engine.eval.metrics` (Recall@{1,5,10}, Hit@{1,5,10}, MRR@10, nDCG@10) with hand-computed unit tests; BEIR SciFact loader with MD5 verification (`evals/datasets/` gitignored); in-repo structured-doc set under `evals/structured/`; `run_evaluation` / `run_scifact_eval` / `run_structured_eval` writing JSON reports under `evals/results/`; `rag-engine evaluate` CLI; `scripts/eval_table.py` for README tables. Structured smoke report committed (hashing embedder — not a retrieval-quality claim).
 
