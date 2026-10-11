@@ -44,3 +44,11 @@ Short-horizon task list. Milestones and acceptance criteria live in `PLAN.md`.
 - [x] `content_hash` and `page_end` in provenance; chunk offset validation; NaN/inf weights rejected
 - [x] Per-stage `components`/`ranks` (nested rerank keeps every stage); `schema_version` on `search --json`
 - [x] End-to-end offset-invariant tests across loaders and pipeline stages
+
+## M5 - Answer generation (done)
+- [x] `AnswerGenerator` protocol and pydantic `AnswerResponse` / `Citation` schema
+- [x] Extractive generator (sentence selection + citations) as default
+- [x] OpenAI-compatible client with JSON repair (env-configured; stdlib urllib)
+- [x] `LLMConfig` / `RAG_LLM_*` settings
+- [x] `rag-engine answer` CLI (`--generator extractive|openai|auto`)
+- [x] Tests + coverage back at/above 96%

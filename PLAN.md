@@ -8,7 +8,7 @@ Milestones are ordered; each ends with green CI and an updated CHANGELOG.
 | M2 | Embeddings, vector store, BM25 index, retrieval interface | done |
 | M3 | Hybrid fusion (RRF / weighted), metadata filters, cross-encoder reranking | done |
 | M4 | Evaluation harness (SciFact + structured-doc set), benchmark reports | done |
-| M5 | Answer generation: provider interface, extractive fallback, citations, structured output | planned |
+| M5 | Answer generation: provider interface, extractive fallback, citations, structured output | done |
 | M6 | FastAPI service, Dockerfile, docker build in CI | planned |
 | M7 | Hardening: error handling, perf (batching, caching), docs, full release (v0.1.0 was the M1-M3 interface release) | planned |
 
@@ -59,6 +59,11 @@ Acceptance
 - `AnswerGenerator` protocol; OpenAI-compatible client (env-configured);
   extractive generator (sentence selection with citations) as default.
 - Pydantic response schema; malformed-output handling and repair.
+- Status (2026-10-11): landed under `rag_engine.answering` with
+  `ExtractiveAnswerGenerator` (default), `OpenAICompatibleAnswerGenerator`
+  (stdlib urllib; `RAG_LLM_BASE_URL` / `RAG_LLM_MODEL` / `RAG_LLM_API_KEY`),
+  and `rag-engine answer`. Generation-quality metrics still scaffolded as
+  not-run until a provider is configured (ADR-0004).
 
 ## M6 - Service and deployment
 

@@ -9,6 +9,9 @@ Commands:
   lexical, or hybrid retriever, optionally reranking the fused candidates.
 * ``evaluate``: run the M4 evaluation harness (SciFact or structured-doc set)
   and write a JSON report under ``evals/results/``.
+* ``answer INDEX_DIR QUERY``: retrieve then generate a cited answer (extractive
+  by default; OpenAI-compatible when ``RAG_LLM_BASE_URL`` + ``RAG_LLM_MODEL``
+  are set, or ``--generator openai``).
 """
 
 from __future__ import annotations
@@ -24,6 +27,10 @@ from typing import Any
 
 from pydantic import ValidationError
 
+from rag_engine.answering import (
+    ExtractiveAnswerGenerator,
+    OpenAICompatibleAnswerGenerator,
+)
 from rag_engine.chunking import chunk_documents, chunk_stats
 from rag_engine.config import ChunkingConfig, IngestionConfig, Settings
 from rag_engine.documents import (
@@ -260,6 +267,81 @@ def _build_parser() -> argparse.ArgumentParser:
         default=None,
         help="Corpus id for document ids (default depends on dataset).",
     )
+
+    answer = sub.add_parser(
+        "answer",
+        help="Retrieve hits and generate a cited answer (extractive default).",
+    )
+    answer.add_argument("index_dir", type=Path, help="Index directory written by 'index'.")
+    answer.add_argument("query", help="Question to answer.")
+    answer.add_argument(
+        "--mode",
+        choices=["dense", "lexical", "hybrid"],
+        default="hybrid",
+        help="Retriever mode (default: hybrid).",
+    )
+    answer.add_argument(
+        "-k",
+        "--top-k",
+        type=int,
+        default=5,
+        help="Number of chunks to pass to the generator (default: 5).",
+    )
+    answer.add_argument(
+        "--filter",
+        action="append",
+        default=None,
+        metavar="KEY=VALUE",
+        help="Metadata filter (repeatable; values for 'page' are parsed as int).",
+    )
+    answer.add_argument(
+        "--fusion",
+        choices=["rrf", "weighted"],
+        default=None,
+        help="Hybrid fusion method (default: rrf); requires --mode hybrid.",
+    )
+    answer.add_argument(
+        "--rrf-k",
+        type=int,
+        default=None,
+        help="RRF constant k (default: 60); requires --mode hybrid.",
+    )
+    answer.add_argument(
+        "--weight",
+        action="append",
+        default=None,
+        metavar="NAME=FLOAT",
+        help="Hybrid weight for 'dense' or 'lexical' (repeatable); requires --mode hybrid.",
+    )
+    answer.add_argument(
+        "--candidates",
+        type=int,
+        default=None,
+        help="Candidate pool for fusion/rerank (default: 50).",
+    )
+    answer.add_argument(
+        "--rerank",
+        action="store_true",
+        help="Rerank retrieved candidates with a cross-encoder before answering.",
+    )
+    answer.add_argument(
+        "--rerank-model",
+        default="Xenova/ms-marco-MiniLM-L-6-v2",
+        help="Cross-encoder model used by --rerank.",
+    )
+    answer.add_argument(
+        "--generator",
+        choices=["extractive", "openai", "auto"],
+        default="auto",
+        help="Answer generator (default: auto = openai when RAG_LLM_* set, else extractive).",
+    )
+    answer.add_argument(
+        "--max-sentences",
+        type=int,
+        default=5,
+        help="Max sentences for extractive / soft bound for openai (default: 5).",
+    )
+    answer.add_argument("--json", action="store_true", help="Print AnswerResponse as JSON.")
     return parser
 
 
@@ -713,6 +795,128 @@ def cmd_evaluate(args: argparse.Namespace) -> int:
     return 0
 
 
+def _build_retriever_for_answer(args: argparse.Namespace, settings: Settings) -> Retriever:
+    """Shared search/answer retriever wiring (dense / lexical / hybrid / rerank)."""
+    dense, lexical = load_index(args.index_dir, settings.embedding)
+    candidates = 50 if args.candidates is None else args.candidates
+    if candidates < 1:
+        raise ValueError("candidates must be positive")
+    if args.candidates is not None and args.mode != "hybrid" and not args.rerank:
+        raise ValueError("--candidates requires --mode hybrid or --rerank")
+    if args.mode != "hybrid" and any(
+        value is not None for value in (args.fusion, args.rrf_k, args.weight)
+    ):
+        raise ValueError("--fusion/--rrf-k/--weight require --mode hybrid")
+    method: FusionMethod | str = args.fusion or "rrf"
+    if args.rrf_k is not None and args.fusion == "weighted":
+        raise ValueError("--rrf-k requires --fusion rrf")
+    rrf_k = 60 if args.rrf_k is None else args.rrf_k
+    if rrf_k < 0:
+        raise ValueError("rrf-k must be >= 0")
+    parsed_weights = _parse_weight_overrides(args.weight)
+    if parsed_weights and all(value == 0 for value in parsed_weights.values()):
+        raise ValueError("at least one weight must be positive")
+    weights: Mapping[str, float] | None = parsed_weights or None
+
+    retriever: Retriever = dense
+    if args.mode == "lexical":
+        retriever = lexical
+    elif args.mode == "hybrid":
+        retriever = HybridRetriever(
+            [dense, lexical],
+            method=method,
+            weights=weights,
+            rrf_k=rrf_k,
+            candidates=candidates,
+        )
+    if args.rerank:
+        retriever = RerankingRetriever(
+            retriever,
+            CrossEncoderReranker(
+                args.rerank_model,
+                cache_dir=settings.embedding.cache_dir,
+                threads=settings.embedding.threads,
+            ),
+            candidates=candidates,
+        )
+    return retriever
+
+
+def _select_answer_generator(
+    args: argparse.Namespace, settings: Settings
+) -> ExtractiveAnswerGenerator | OpenAICompatibleAnswerGenerator:
+    """Resolve extractive vs openai from --generator and RAG_LLM_* settings."""
+    choice = args.generator
+    llm = settings.llm
+    openai_ready = bool(llm.base_url and llm.model)
+    if choice == "auto":
+        choice = "openai" if openai_ready else "extractive"
+    if choice == "extractive":
+        return ExtractiveAnswerGenerator()
+    if not openai_ready:
+        raise ValueError(
+            "openai generator requires RAG_LLM_BASE_URL and RAG_LLM_MODEL "
+            "(or pass --generator extractive)"
+        )
+    return OpenAICompatibleAnswerGenerator(
+        base_url=llm.base_url or "",
+        model=llm.model or "",
+        api_key=llm.api_key,
+        timeout_s=llm.timeout_s,
+        max_tokens=llm.max_tokens,
+        temperature=llm.temperature,
+    )
+
+
+def cmd_answer(args: argparse.Namespace) -> int:
+    """Retrieve then generate a structured cited answer."""
+    if args.top_k <= 0:
+        print("error: k must be positive", file=sys.stderr)
+        return 2
+    if args.max_sentences < 1:
+        print("error: max-sentences must be >= 1", file=sys.stderr)
+        return 2
+    try:
+        settings = Settings.from_env()
+        filters = _parse_filters(args.filter)
+    except ValueError as exc:
+        print(f"error: {exc}", file=sys.stderr)
+        return 2
+    if not args.index_dir.exists():
+        print(f"error: index directory does not exist: {args.index_dir}", file=sys.stderr)
+        return 2
+    try:
+        retriever = _build_retriever_for_answer(args, settings)
+        generator = _select_answer_generator(args, settings)
+        hits = retriever.retrieve(args.query, args.top_k, filters or None)
+        response = generator.generate(args.query, hits, max_sentences=args.max_sentences)
+    except (ValueError, ImportError) as exc:
+        print(f"error: {exc}", file=sys.stderr)
+        return 2
+
+    if args.json:
+        print(response.model_dump_json(indent=2))
+        return 0
+    if response.abstained:
+        print("abstained: no supporting evidence found", file=sys.stderr)
+        return 0
+    print(response.answer)
+    if response.citations:
+        print()
+        for i, citation in enumerate(response.citations, start=1):
+            location = citation.source or citation.doc_id
+            if citation.heading_path:
+                location += " > " + " > ".join(citation.heading_path)
+            if citation.page is not None:
+                location += f" (p. {citation.page})"
+            print(f"[{i}] {location}  [{citation.chunk_id}]")
+            quote = " ".join(citation.quote.split())
+            if len(quote) > _TEXT_PREVIEW_CHARS:
+                quote = quote[:_TEXT_PREVIEW_CHARS] + "..."
+            print(f"    {quote}")
+    return 0
+
+
 def main(argv: list[str] | None = None) -> int:
     parser = _build_parser()
     args = parser.parse_args(argv)
@@ -724,6 +928,8 @@ def main(argv: list[str] | None = None) -> int:
         return cmd_search(args)
     if args.command == "evaluate":
         return cmd_evaluate(args)
+    if args.command == "answer":
+        return cmd_answer(args)
     parser.error(f"unknown command {args.command!r}")
     return 2
 

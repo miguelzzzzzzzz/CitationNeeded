@@ -82,6 +82,24 @@ class EmbeddingConfig(BaseModel):
     threads: int | None = Field(default=None, ge=1)
 
 
+class LLMConfig(BaseModel):
+    """Optional OpenAI-compatible answer generator settings (ADR-0004).
+
+    When ``base_url`` or ``model`` is unset the CLI uses the extractive default.
+    Env vars: ``RAG_LLM_BASE_URL``, ``RAG_LLM_MODEL``, ``RAG_LLM_API_KEY``,
+    ``RAG_LLM_TIMEOUT_S``, ``RAG_LLM_MAX_TOKENS``, ``RAG_LLM_TEMPERATURE``.
+    """
+
+    model_config = ConfigDict(frozen=True, extra="forbid")
+
+    base_url: str | None = None
+    model: str | None = None
+    api_key: str | None = None
+    timeout_s: float = Field(default=60.0, gt=0)
+    max_tokens: int = Field(default=1024, ge=1)
+    temperature: float = Field(default=0.0, ge=0)
+
+
 class Settings(BaseModel):
     """Top-level settings object passed through the pipeline."""
 
@@ -90,6 +108,7 @@ class Settings(BaseModel):
     ingestion: IngestionConfig = IngestionConfig()
     chunking: ChunkingConfig = ChunkingConfig()
     embedding: EmbeddingConfig = EmbeddingConfig()
+    llm: LLMConfig = LLMConfig()
 
     @classmethod
     def from_env(cls, environ: Mapping[str, str] | None = None) -> Settings:
@@ -101,6 +120,7 @@ class Settings(BaseModel):
         ingestion: dict[str, str] = {}
         chunking: dict[str, str] = {}
         embedding: dict[str, str] = {}
+        llm: dict[str, str] = {}
         mapping = {
             "MAX_FILE_BYTES": (ingestion, "max_file_bytes"),
             "FOLLOW_SYMLINKS": (ingestion, "follow_symlinks"),
@@ -115,6 +135,12 @@ class Settings(BaseModel):
             "EMBEDDING_QUERY_PREFIX": (embedding, "query_prefix"),
             "EMBEDDING_CACHE_DIR": (embedding, "cache_dir"),
             "EMBEDDING_THREADS": (embedding, "threads"),
+            "LLM_BASE_URL": (llm, "base_url"),
+            "LLM_MODEL": (llm, "model"),
+            "LLM_API_KEY": (llm, "api_key"),
+            "LLM_TIMEOUT_S": (llm, "timeout_s"),
+            "LLM_MAX_TOKENS": (llm, "max_tokens"),
+            "LLM_TEMPERATURE": (llm, "temperature"),
         }
         for suffix, (target, field) in mapping.items():
             value = env.get(ENV_PREFIX + suffix)
@@ -126,6 +152,7 @@ class Settings(BaseModel):
                 ingestion=IngestionConfig.model_validate(ingestion),
                 chunking=ChunkingConfig.model_validate(chunking),
                 embedding=EmbeddingConfig.model_validate(embedding),
+                llm=LLMConfig.model_validate(llm),
             )
         except ValidationError as exc:
             raise ValueError(f"invalid RAG_* configuration: {exc}") from exc

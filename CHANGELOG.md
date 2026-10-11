@@ -6,6 +6,14 @@ All notable changes to this project are documented here. The format follows
 
 ## [Unreleased]
 
+### Added
+- Answer generation (M5 / ADR-0004): `rag_engine.answering` with `AnswerGenerator`
+  protocol, pydantic `AnswerResponse`/`Citation` schema, extractive default
+  (`ExtractiveAnswerGenerator`), and optional OpenAI-compatible client
+  (`OpenAICompatibleAnswerGenerator` via stdlib urllib; configured by
+  `RAG_LLM_BASE_URL`, `RAG_LLM_MODEL`, `RAG_LLM_API_KEY`). `rag-engine answer`
+  retrieves then generates cited answers (`--generator extractive|openai|auto`).
+
 ### Fixed
 - Evaluation (M4 review): every mode is compared at the same retrieval depth. Each starts at `EvalConfig.depth` (default 50, at least `top_k`) and over-fetches until it has `top_k` unique documents or the index or `max_depth` is exhausted. Previously dense/lexical fetched only `top_k` chunks while hybrid fetched 50, so baselines could be scored on fewer documents. Reports record per-mode depth statistics and `queries_short_of_k`; `rag-engine evaluate` gains `--depth`/`--max-depth`.
 - Evaluation reports: one untimed warm-up per mode before latency timing; `git_dirty` recorded with `git_sha`; queries with no relevant grade are skipped and counted (`n_queries_skipped_no_relevant`, `n_queries_unlabelled`) instead of scored 0; structured-set reports are flagged `smoke_only`; report `schema_version` 2.
