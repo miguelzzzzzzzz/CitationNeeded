@@ -30,7 +30,7 @@ Short-horizon task list. Milestones and acceptance criteria live in `PLAN.md`.
 - [x] Metrics: Recall@{1,5,10}, Hit@{1,5,10}, MRR@10, nDCG@10 with hand-computed unit tests
 - [x] Runner + `rag-engine evaluate` writing JSON reports (config, checksum, git SHA, hardware)
 - [x] `scripts/eval_table.py` comparison table generator
-- [ ] Optional: full SciFact run with fastembed (±rerank) and README table copied from that report (after review)
+- [x] Optional: full SciFact run with fastembed (±rerank) — report `evals/results/scifact_test_fastembed_20261010T184148Z.json` (git_dirty false, mean_depth_used 50). README table still blocked pending Chad review.
 
 ## Review of M4 at 96b3c33 (done, see REVIEW.md)
 - [x] Equal retrieval depth across modes with over-fetch to `top_k` unique docs; depth recorded in reports

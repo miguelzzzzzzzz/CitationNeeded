@@ -31,3 +31,6 @@ evals/results/*.tmp.json
 .idea/
 .vscode/
 .DS_Store
+
+# Local uv lock from ad-hoc installs (project uses hatchling/pip)
+uv.lock

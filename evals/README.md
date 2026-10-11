@@ -45,3 +45,13 @@ rag-engine evaluate --dataset scifact --embedder hashing
 Reports land under `evals/results/`. Unit tests cover metrics against
 hand-computed examples and loaders against tiny fixtures; they never download
 SciFact.
+
+## Committed reports
+
+| File | Dataset | Embedder | smoke_only | Notes |
+| --- | --- | --- | --- | --- |
+| `results/structured_hashing_*.json` | structured | hashing | true | Offline smoke; not a quality claim |
+| `results/scifact_test_hashing_*.json` | SciFact test | hashing | false | Harness smoke on SciFact; hashing embedder — not a quality claim |
+| `results/scifact_test_fastembed_20261010T184148Z.json` | SciFact test | fastembed | false | Real dense/lexical/hybrid/hybrid+rerank run at equal depth 50. **Pending Chad review before any README quality table.** |
+
+Do not copy metrics into the project README until that review lands.
