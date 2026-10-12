@@ -69,7 +69,7 @@ def test_unlabelled_and_non_relevant_queries_are_counted() -> None:
         "q-labelled": {second_id: 1},
     }
 
-    report = run_evaluation(
+    report, _ = run_evaluation(
         documents=documents,
         queries=queries,
         qrels=qrels,
@@ -97,7 +97,7 @@ def test_git_dirty_outside_checkout_and_report_field(tmp_path: Path) -> None:
     queries = {"q": "alpha"}
     qrels: dict[str, dict[str, int]] = {"q": {documents[0].doc_id: 1}}
 
-    report = run_evaluation(
+    report, _ = run_evaluation(
         documents=documents,
         queries=queries,
         qrels=qrels,
@@ -153,7 +153,7 @@ def test_retrieval_warmup_call_count(monkeypatch: pytest.MonkeyPatch) -> None:
         "q-two": {documents[1].doc_id: 1},
     }
 
-    report = run_evaluation(
+    report, _ = run_evaluation(
         documents=documents,
         queries=queries,
         qrels=qrels,

@@ -54,6 +54,7 @@ __all__ = [
     "git_dirty",
     "git_sha",
     "hardware_note",
+    "per_query_sidecar_path",
     "retrieve_documents",
     "run_evaluation",
     "run_scifact_eval",
@@ -369,12 +370,14 @@ def run_evaluation(
     dataset_name: str,
     notes: str = "",
     smoke_only: bool = False,
-) -> EvalReport:
+) -> tuple[EvalReport, dict[str, dict[str, dict[str, float]]]]:
     """Chunk, index and score ``queries``/``qrels`` in memory, then report.
 
-    Every mode fetches the same initial chunk depth and over-fetches until it holds
-    ``top_k`` unique documents or exhausts the index, so no mode is scored on fewer
-    documents than another.
+    Returns the aggregate report plus ``per_query[mode][query_id]``, the exact
+    metric dict returned by :func:`score_query`. Every mode fetches the same
+    initial chunk depth and over-fetches until it holds ``top_k`` unique
+    documents or exhausts the index, so no mode is scored on fewer documents than
+    another.
     """
     chunks = chunk_documents(
         documents,
@@ -411,6 +414,7 @@ def run_evaluation(
     metrics: dict[str, dict[str, float]] = {}
     retrieval: dict[str, dict[str, float]] = {}
     latency: dict[str, dict[str, float]] = {}
+    per_query: dict[str, dict[str, dict[str, float]]] = {}
     for mode, retriever in _build_retrievers(config, dense, lexical).items():
         reranking = mode == _RERANK_MODE
         if labelled:
@@ -444,6 +448,7 @@ def run_evaluation(
             if exhausted:
                 short_of_k += 1
         metrics[mode] = aggregate_metrics(scored) if scored else {}
+        per_query[mode] = scored
         latency[mode] = (
             {
                 "retrieve_p50": _percentile(timings, 0.5),
@@ -460,7 +465,7 @@ def run_evaluation(
             "queries_short_of_k": float(short_of_k),
         }
 
-    return EvalReport(
+    report = EvalReport(
         created_at=datetime.now(UTC).isoformat(),
         git_sha=git_sha(),
         git_dirty=git_dirty(),
@@ -479,13 +484,53 @@ def run_evaluation(
         notes=notes,
         smoke_only=smoke_only,
     )
+    return report, per_query
 
 
-def write_report(report: EvalReport, path: Path) -> Path:
-    """Write ``report`` as pretty, strict JSON, creating parent directories."""
+def per_query_sidecar_path(path: Path) -> Path:
+    """Sibling per-query sidecar path for an aggregate report.
+
+    ``foo.json`` -> ``foo.per_query.json``.
+    """
+    return path.with_name(f"{path.stem}.per_query.json")
+
+
+def write_report(
+    report: EvalReport,
+    path: Path,
+    *,
+    per_query: Mapping[str, Mapping[str, Mapping[str, float]]] | None = None,
+) -> Path:
+    """Write ``report`` as pretty, strict JSON, creating parent directories.
+
+    When ``per_query`` is provided, also write the sibling sidecar described by
+    :func:`per_query_sidecar_path`. The aggregate JSON schema is unchanged.
+    """
     path.parent.mkdir(parents=True, exist_ok=True)
     payload = json.dumps(report.model_dump(mode="json"), indent=2, allow_nan=False)
     path.write_text(f"{payload}\n", encoding="utf-8")
+    if per_query is not None:
+        query_ids: set[str] = set()
+        modes_payload: dict[str, dict[str, dict[str, float]]] = {}
+        for mode, mode_scores in per_query.items():
+            scored: dict[str, dict[str, float]] = {}
+            for query_id, query_metrics in mode_scores.items():
+                scored[query_id] = dict(query_metrics)
+                query_ids.add(query_id)
+            modes_payload[mode] = scored
+        sidecar = {
+            "schema_version": 1,
+            "aggregate_report": path.name,
+            "created_at": report.created_at,
+            "git_sha": report.git_sha,
+            "git_dirty": report.git_dirty,
+            "dataset_name": report.dataset_name,
+            "query_ids": sorted(query_ids),
+            "modes": modes_payload,
+        }
+        sidecar_path = per_query_sidecar_path(path)
+        sidecar_payload = json.dumps(sidecar, indent=2, allow_nan=False)
+        sidecar_path.write_text(f"{sidecar_payload}\n", encoding="utf-8")
     return path
 
 
@@ -535,7 +580,7 @@ def run_scifact_eval(
         query_id: {beir_to_doc[beir_id]: grade for beir_id, grade in grades.items()}
         for query_id, grades in split_data.qrels.items()
     }
-    report = run_evaluation(
+    report, per_query = run_evaluation(
         documents=documents,
         queries=queries,
         qrels=qrels,
@@ -543,7 +588,11 @@ def run_scifact_eval(
         dataset_checksum=split_data.checksum or _fingerprint(documents, queries, qrels),
         dataset_name=f"scifact/{cfg.split}",
     )
-    write_report(report, _report_path(results_dir, f"scifact_{cfg.split}_{cfg.embedder}"))
+    write_report(
+        report,
+        _report_path(results_dir, f"scifact_{cfg.split}_{cfg.embedder}"),
+        per_query=per_query,
+    )
     return report
 
 
@@ -569,7 +618,7 @@ def run_structured_eval(
     documents = list(docset.documents.values())
     queries = {qid: query.text for qid, query in docset.queries.items()}
     qrels = docset.qrels_binary()
-    report = run_evaluation(
+    report, per_query = run_evaluation(
         documents=documents,
         queries=queries,
         qrels=qrels,
@@ -583,5 +632,9 @@ def run_structured_eval(
         ),
         smoke_only=True,
     )
-    write_report(report, _report_path(results_dir, f"structured_{cfg.embedder}"))
+    write_report(
+        report,
+        _report_path(results_dir, f"structured_{cfg.embedder}"),
+        per_query=per_query,
+    )
     return report

@@ -1,5 +1,10 @@
 """Evaluation harness: metrics, SciFact loader, structured-doc set, and runners."""
 
+from rag_engine.eval.bootstrap import (
+    BootstrapCI,
+    load_per_query_scores,
+    paired_bootstrap_ci,
+)
 from rag_engine.eval.metrics import (
     METRIC_NAMES,
     Qrels,
@@ -16,6 +21,7 @@ from rag_engine.eval.metrics import (
 from rag_engine.eval.runner import (
     EvalConfig,
     EvalReport,
+    per_query_sidecar_path,
     run_evaluation,
     run_scifact_eval,
     run_structured_eval,
@@ -35,6 +41,7 @@ __all__ = [
     "METRIC_NAMES",
     "SCIFACT_MD5",
     "SCIFACT_URL",
+    "BootstrapCI",
     "EvalConfig",
     "EvalReport",
     "Qrels",
@@ -46,10 +53,13 @@ __all__ = [
     "download_scifact",
     "ensure_scifact",
     "hit_at_k",
+    "load_per_query_scores",
     "load_scifact",
     "load_structured_docs",
     "mrr_at_k",
     "ndcg_at_k",
+    "paired_bootstrap_ci",
+    "per_query_sidecar_path",
     "recall_at_k",
     "relevant_ids",
     "run_evaluation",

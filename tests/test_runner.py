@@ -62,7 +62,7 @@ def test_build_scifact_documents_and_eval(tmp_path: Path) -> None:
         qid: {beir_to_doc[bid]: g for bid, g in grades.items() if bid in beir_to_doc}
         for qid, grades in split.qrels.items()
     }
-    report = run_evaluation(
+    report, _ = run_evaluation(
         documents=docs,
         queries=queries,
         qrels=qrels,
@@ -104,8 +104,57 @@ def test_run_structured_eval_writes_report(tmp_path: Path) -> None:
     assert report.n_documents == 3
     assert report.n_queries == 8
     assert report.metrics["lexical"]["hit@1"] == pytest.approx(1.0)
-    written = list(tmp_path.glob("structured_*.json"))
-    assert len(written) == 1
+
+    aggregates = [
+        path
+        for path in tmp_path.glob("structured_*.json")
+        if not path.name.endswith(".per_query.json")
+    ]
+    sidecars = list(tmp_path.glob("structured_*.per_query.json"))
+    assert len(aggregates) == 1
+    assert len(sidecars) == 1
+    sidecar_path = sidecars[0]
+    assert sidecar_path.name == f"{aggregates[0].stem}.per_query.json"
+
+    payload = json.loads(sidecar_path.read_text(encoding="utf-8"))
+    assert payload["schema_version"] == 1
+    assert payload["aggregate_report"] == aggregates[0].name
+    assert payload["dataset_name"] == report.dataset_name
+    assert len(payload["query_ids"]) == report.n_queries
+    assert set(payload["modes"]) == set(report.metrics)
+    for mode, per_mode in payload["modes"].items():
+        assert set(per_mode) == set(payload["query_ids"])
+        ndcgs = [metrics["ndcg@10"] for metrics in per_mode.values()]
+        assert sum(ndcgs) / len(ndcgs) == pytest.approx(report.metrics[mode]["ndcg@10"])
+
+
+def test_write_report_sidecar_is_optional(tmp_path: Path) -> None:
+    split = load_scifact(MINI, split="test", checksum="mini")
+    docs = build_scifact_documents(split, corpus_id="mini-eval")
+    beir_to_doc = {str(doc.metadata["beir_doc_id"]): doc.doc_id for doc in docs}
+    queries = {qid: q.text for qid, q in split.queries.items()}
+    qrels = {
+        qid: {beir_to_doc[bid]: g for bid, g in grades.items() if bid in beir_to_doc}
+        for qid, grades in split.qrels.items()
+    }
+    report, per_query = run_evaluation(
+        documents=docs,
+        queries=queries,
+        qrels=qrels,
+        config=EvalConfig(dataset="scifact", modes=("lexical",), embedder="hashing", top_k=3),
+        dataset_checksum="mini",
+        dataset_name="mini",
+    )
+    path = tmp_path / "manual.json"
+    write_report(report, path)
+    assert path.exists()
+    sidecar = tmp_path / "manual.per_query.json"
+    assert not sidecar.exists()
+
+    write_report(report, path, per_query=per_query)
+    assert sidecar.exists()
+    payload = json.loads(sidecar.read_text(encoding="utf-8"))
+    assert payload["query_ids"] == sorted(per_query["lexical"])
 
 
 def test_eval_config_rejects_unknown_mode() -> None:
@@ -178,7 +227,7 @@ def test_fingerprint_and_unlabeled_query_skipped(tmp_path: Path) -> None:
     }
     digest = _fingerprint(docs, queries, qrels)
     assert len(digest) == 64
-    report = run_evaluation(
+    report, _ = run_evaluation(
         documents=docs,
         queries=queries,
         qrels=qrels,
@@ -234,7 +283,7 @@ def test_hybrid_rerank_mode_with_stub(monkeypatch: pytest.MonkeyPatch) -> None:
         qid: {beir_to_doc[bid]: g for bid, g in grades.items() if bid in beir_to_doc}
         for qid, grades in split.qrels.items()
     }
-    report = run_evaluation(
+    report, _ = run_evaluation(
         documents=docs,
         queries=queries,
         qrels=qrels,

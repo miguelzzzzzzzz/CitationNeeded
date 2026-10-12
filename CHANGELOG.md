@@ -7,6 +7,7 @@ All notable changes to this project are documented here. The format follows
 ## [Unreleased]
 
 ### Added
+- Eval honesty pack (pre-M6): `run_evaluation` returns per-query scores; `write_report` writes a sibling `*.per_query.json` sidecar (schema 1). `rag_engine.eval.bootstrap.paired_bootstrap_ci` + `scripts/bootstrap_ci.py` for paired hybrid-vs-dense CIs. README SciFact quality table from the committed fastembed report (Chad-matched aggregates; hybrid vs dense described as about the same until a sidecar-bearing bootstrap CI is cited).
 - Answer generation (M5 / ADR-0004): `rag_engine.answering` with `AnswerGenerator`
   protocol, pydantic `AnswerResponse`/`Citation` schema, extractive default
   (`ExtractiveAnswerGenerator`), and optional OpenAI-compatible client

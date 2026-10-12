@@ -95,7 +95,7 @@ def test_dominant_document_does_not_starve_unique_docs(zebra_corpus: Corpus) -> 
         chunk_overlap=0,
         corpus_id="t",
     )
-    report = run_evaluation(
+    report, _ = run_evaluation(
         documents=documents,
         queries=queries,
         qrels=qrels,
@@ -129,7 +129,7 @@ def test_capped_max_depth_starves_lexical_retrieval(zebra_corpus: Corpus) -> Non
         chunk_overlap=0,
         corpus_id="t",
     )
-    report = run_evaluation(
+    report, _ = run_evaluation(
         documents=documents,
         queries=queries,
         qrels=qrels,

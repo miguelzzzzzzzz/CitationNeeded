@@ -20,7 +20,7 @@ from typing import Any
 def _load_reports(results_dir: Path) -> list[dict[str, Any]]:
     reports: list[dict[str, Any]] = []
     for path in sorted(results_dir.glob("*.json")):
-        if path.name.endswith(".tmp.json"):
+        if path.name.endswith(".tmp.json") or path.name.endswith(".per_query.json"):
             continue
         try:
             payload = json.loads(path.read_text(encoding="utf-8"))

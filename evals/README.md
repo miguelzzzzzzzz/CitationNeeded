@@ -14,6 +14,8 @@ Milestone M4 evaluation harness for Citation Needed.
 - `results/`: committed JSON reports from real runs (config, dataset checksum,
   git SHA, hardware, metrics, latency). README numbers must come from these
   files only — generate a Markdown table with `python scripts/eval_table.py`.
+  Each new run also writes a `*.per_query.json` sidecar (schema 1) for paired
+  bootstrap comparisons (`scripts/bootstrap_ci.py`).
 
 ## Running
 
@@ -52,6 +54,38 @@ SciFact.
 | --- | --- | --- | --- | --- |
 | `results/structured_hashing_*.json` | structured | hashing | true | Offline smoke; not a quality claim |
 | `results/scifact_test_hashing_*.json` | SciFact test | hashing | false | Harness smoke on SciFact; hashing embedder — not a quality claim |
-| `results/scifact_test_fastembed_20261010T184148Z.json` | SciFact test | fastembed | false | Real dense/lexical/hybrid/hybrid+rerank run at equal depth 50. **Pending Chad review before any README quality table.** |
+| `results/scifact_test_fastembed_20261010T184148Z.json` | SciFact test | fastembed | false | Real dense/lexical/hybrid/hybrid+rerank run at equal depth 50 (`git_dirty: false`). Chad matched aggregates to 3 decimals (Oct 11). |
 
-Do not copy metrics into the project README until that review lands.
+## Per-query sidecar (schema 1)
+
+Each aggregate report `NAME.json` written by the runner also gets a sibling
+`NAME.per_query.json` when `write_report(..., per_query=...)` is used (the
+`rag-engine evaluate` path always does). The sidecar holds aligned per-query
+metric dicts for every mode so paired comparisons are possible without
+re-parsing rankings:
+
+```json
+{
+  "schema_version": 1,
+  "aggregate_report": "NAME.json",
+  "created_at": "...",
+  "git_sha": "...",
+  "git_dirty": false,
+  "dataset_name": "scifact/test",
+  "query_ids": ["...", "..."],
+  "modes": {
+    "dense": { "<qid>": { "ndcg@10": 0.0, "mrr@10": 0.0, "...": 0.0 } },
+    "hybrid": { "<qid>": { "...": 0.0 } }
+  }
+}
+```
+
+Paired bootstrap CI for hybrid vs dense (or any two modes):
+
+```bash
+python scripts/bootstrap_ci.py evals/results/NAME.per_query.json \
+  --mode-a hybrid --mode-b dense --metric ndcg@10
+```
+
+The committed fastembed report from 2026-10-10 predates the sidecar; a clean
+re-run after this change produces both files. Do not invent per-query numbers.
