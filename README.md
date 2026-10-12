@@ -12,13 +12,12 @@ schema-validated answers; and a reproducible evaluation harness so every
 design choice is backed by measured retrieval quality and latency.
 
 > **Status:** v0.1.0, a pre-1.0 interface release (see [PLAN.md](PLAN.md) and
-> [CHANGELOG.md](CHANGELOG.md)). M1–M3 (ingestion through hybrid retrieval) are
-> done and passed interface review ([REVIEW.md](REVIEW.md)); M4 (evaluation
-> harness) is done. Interfaces may still change before 1.0.
-> No SciFact quality numbers are shown here yet. The committed hashing reports
-> under `evals/results/` validate the harness only, and the 3-document /
-> 8-query structured set is smoke-only. Copy README tables from committed
-> reports via `python scripts/eval_table.py`.
+> [CHANGELOG.md](CHANGELOG.md)). M1–M5 (ingestion through cited answer
+> generation) are done; M1–M3 passed interface review ([REVIEW.md](REVIEW.md)).
+> Interfaces may still change before 1.0. SciFact quality numbers below come
+> from the committed fastembed report; hashing / structured reports under
+> `evals/results/` are harness/smoke checks only. Regenerate tables with
+> `python scripts/eval_table.py` — do not edit numbers by hand.
 
 ## Why this is not "chat with a PDF"
 
@@ -117,7 +116,7 @@ these keys bumps `schema_version`.
 `--rerank` scores at most `--candidates` (query, chunk) pairs with the
 `Xenova/ms-marco-MiniLM-L-6-v2` cross-encoder (~80 MB, CPU). `--embedder hashing`
 builds a fully offline index for testing. Which configuration retrieves best is
-measured by the M4 harness (`rag-engine evaluate`); SciFact quality numbers appear here only after a committed SciFact report exists.
+measured by the M4 harness (`rag-engine evaluate`); see the SciFact table below.
 
 ## Naming
 
@@ -144,8 +143,30 @@ because they have no relevant judgement. The structured set (3 docs, 8
 queries) is a smoke test: its reports carry `"smoke_only": true` and support
 no quality claims.
 
-JSON reports land in `evals/results/`. Render a Markdown table with
-`python scripts/eval_table.py`. Details: [evals/README.md](evals/README.md).
+JSON reports land in `evals/results/` (plus a `*.per_query.json` sidecar for
+paired bootstrap). Render a Markdown table with `python scripts/eval_table.py`.
+Details: [evals/README.md](evals/README.md).
+
+### SciFact (BEIR test, fastembed)
+
+Source: [`evals/results/scifact_test_fastembed_20261010T184148Z.json`](evals/results/scifact_test_fastembed_20261010T184148Z.json)
+(`git_dirty: false`, depth 50, 300 scored queries, embedder `BAAI/bge-small-en-v1.5`,
+fusion RRF k=60, reranker `Xenova/ms-marco-MiniLM-L-6-v2`). Chad independently
+re-ran and matched these aggregates to three decimals (2026-10-11).
+
+| mode | nDCG@10 | MRR@10 | Recall@10 | Hit@10 |
+| --- | ---: | ---: | ---: | ---: |
+| dense | 0.7148 | 0.6806 | 0.8412 | 0.8567 |
+| lexical | 0.6691 | 0.6359 | 0.7908 | 0.8100 |
+| hybrid | 0.7133 | 0.6766 | 0.8446 | 0.8567 |
+| hybrid+rerank | 0.6900 | 0.6550 | 0.8252 | 0.8367 |
+
+On this run, **hybrid and dense are about the same** on nDCG@10 (0.7133 vs
+0.7148). A paired bootstrap CI over per-query scores
+(`python scripts/bootstrap_ci.py …per_query.json --mode-a hybrid --mode-b dense`)
+is the honesty check for any stronger claim; the committed 2026-10-10 report
+predates the sidecar, so that CI is not claimed here yet. Lexical trails both;
+hybrid+rerank did not beat hybrid on this setup.
 
 ## Development
 

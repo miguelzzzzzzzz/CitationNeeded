@@ -30,7 +30,7 @@ Short-horizon task list. Milestones and acceptance criteria live in `PLAN.md`.
 - [x] Metrics: Recall@{1,5,10}, Hit@{1,5,10}, MRR@10, nDCG@10 with hand-computed unit tests
 - [x] Runner + `rag-engine evaluate` writing JSON reports (config, checksum, git SHA, hardware)
 - [x] `scripts/eval_table.py` comparison table generator
-- [x] Optional: full SciFact run with fastembed (±rerank) — report `evals/results/scifact_test_fastembed_20261010T184148Z.json` (git_dirty false, mean_depth_used 50). README table still blocked pending Chad review.
+- [x] Optional: full SciFact run with fastembed (±rerank) — report `evals/results/scifact_test_fastembed_20261010T184148Z.json` (git_dirty false, mean_depth_used 50). README table landed after Chad match (Oct 11).
 
 ## Review of M4 at 96b3c33 (done, see REVIEW.md)
 - [x] Equal retrieval depth across modes with over-fetch to `top_k` unique docs; depth recorded in reports
@@ -52,3 +52,12 @@ Short-horizon task list. Milestones and acceptance criteria live in `PLAN.md`.
 - [x] `LLMConfig` / `RAG_LLM_*` settings
 - [x] `rag-engine answer` CLI (`--generator extractive|openai|auto`)
 - [x] Tests + coverage back at/above 96%
+
+## Pre-M6 eval honesty pack (done 2026-10-12)
+- [x] README SciFact quality table from committed fastembed report (Chad-matched); hybrid vs dense "about the same" until bootstrap CI on a sidecar-bearing run
+- [x] Eval runner writes `*.per_query.json` sidecar alongside aggregate reports
+- [x] `scripts/bootstrap_ci.py` + `rag_engine.eval.bootstrap` paired bootstrap CI with unit tests
+
+## M6 - FastAPI service (next)
+- [ ] FastAPI service exposing retrieve/answer
+- [ ] Dockerfile + image build in CI
