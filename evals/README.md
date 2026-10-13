@@ -56,6 +56,7 @@ SciFact.
 | `results/scifact_test_hashing_*.json` | SciFact test | hashing | false | Harness smoke on SciFact; hashing embedder — not a quality claim |
 | `results/scifact_test_fastembed_20261010T184148Z.json` | SciFact test | fastembed | false | Real dense/lexical/hybrid/hybrid+rerank run at equal depth 50 (`git_dirty: false`). Chad matched aggregates to 3 decimals (Oct 11). |
 | `results/scifact_test_fastembed_20261012T013527Z.json` (+ `.per_query.json`, `.bootstrap_ci.json`) | SciFact test | fastembed | false | Clean re-run at `99f28f6`; aggregates identical to the 2026-10-10 report; sidecar means equal the aggregates; paired bootstrap CIs (seed 0, B=10,000). |
+| `results/answers_scifact_test_cline-pass_deepseek-v4.1-flash_20261013T013347Z.json` (+ `answers/scifact_test_deepseek-v4.1-flash.cache.jsonl`) | SciFact test (30-claim seeded subset) | fastembed hybrid contexts; `cline-pass/deepseek-v4.1-flash` | false | M5 answer eval at `c55a2bb` (2026-10-13), code-graded; replayable offline with `--replay`. |
 
 ## Per-query sidecar (schema 1)
 

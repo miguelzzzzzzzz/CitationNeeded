@@ -179,6 +179,34 @@ So **hybrid and dense are about the same** on this setup (the interval spans
 either. Dense and hybrid both beat lexical BM25 (intervals exclude 0). This is one
 dataset with one embedder, so treat it as SciFact-specific.
 
+### Answer generation on SciFact (M5, code-graded, small sample)
+
+Source: [`evals/results/answers_scifact_test_cline-pass_deepseek-v4.1-flash_20261013T013347Z.json`](evals/results/answers_scifact_test_cline-pass_deepseek-v4.1-flash_20261013T013347Z.json)
+(model `cline-pass/deepseek-v4.1-flash` via the Cline API, run 2026-10-13, `git_sha`
+`c55a2bb`, `git_dirty: false`). 30 test claims picked with a fixed seed (seed 0):
+20 answerable plus 10 "no relevant" claims whose qrels-gold abstracts were removed
+from the 5 hybrid-retrieved contexts. Graded by code from the raw model JSON; no
+LLM judge. Every reply is cached in
+[`evals/answers/`](evals/answers/), and
+`python scripts/answer_eval.py --replay` recomputes these numbers without the API
+(a replay on the box matched every record: 30 cache hits, 0 API calls).
+
+| metric | value | counts |
+| --- | ---: | --- |
+| JSON replies parsed | 1.00 | 30 / 30 |
+| citation span validity (quote verbatim in cited context) | 0.97 | 29 / 30 citations |
+| citation recall vs gold docs in context | 0.71 | mean over 17 answerable claims with gold retrieved |
+| citation precision (valid citations to a gold doc) | 0.62 | 18 / 29 |
+| false abstention (answerable, gold in context) | 0.24 | 4 / 17 |
+| correct abstention (gold removed) | 0.80 | 8 / 10 |
+
+This is a 30-item sample, so each rate moves several points per item. Precision
+and the "no relevant" rate are scored against incomplete SciFact qrels, so they
+can penalise correct behaviour: both "no relevant" claims the model answered (118,
+1226) cite non-gold abstracts that do discuss the claim. 3 of the 20 answerable claims had
+no gold abstract in the top 5, and those are excluded from recall and false
+abstention.
+
 ## Development
 
 ```bash

@@ -64,6 +64,10 @@ Acceptance
   (stdlib urllib; `RAG_LLM_BASE_URL` / `RAG_LLM_MODEL` / `RAG_LLM_API_KEY`),
   and `rag-engine answer`. Generation-quality metrics still scaffolded as
   not-run until a provider is configured (ADR-0004).
+- Status (2026-10-13): code-graded answer eval (`rag_engine.eval.answers`,
+  `answer_cache`, `answer_runner`, `scripts/answer_eval.py`) with a first recorded
+  30-claim SciFact run on `cline-pass/deepseek-v4.1-flash`; replies cached for
+  offline replay.
 
 ## M6 - Service and deployment
 

@@ -1,0 +1,2568 @@
+{
+  "schema_version": 1,
+  "kind": "answer_eval",
+  "created_at": "2026-10-13T01:33:47.280545+00:00",
+  "git_sha": "c55a2bbcae28d656fa0e15d733ff939994f93257",
+  "git_dirty": false,
+  "dataset_name": "scifact/test",
+  "dataset_checksum": "5f7d1de60b170fc8027bb7898e2efca1",
+  "selection_method": "random.Random(seed).sample(sorted(set(query_ids)), n), returned sorted",
+  "question_template": "Claim: {claim}\nDo the contexts support or contradict this claim? Answer briefly, citing the evidence. If the contexts do not address the claim, abstain.",
+  "config": {
+    "model": "cline-pass/deepseek-v4.1-flash",
+    "base_url": "https://api.cline.bot/api/v1",
+    "n_answerable": 20,
+    "n_no_relevant": 10,
+    "seed": 0,
+    "k": 5,
+    "depth": 50,
+    "embedder": "fastembed",
+    "fusion": "rrf",
+    "rrf_k": 60,
+    "candidates": 50,
+    "chunking": {
+      "strategy": "fixed",
+      "chunk_size": 512,
+      "chunk_overlap": 64
+    },
+    "corpus_id": "scifact",
+    "max_tokens": 16000,
+    "temperature": 0.0,
+    "max_sentences": 3,
+    "max_repair_attempts": 1,
+    "replay": false,
+    "cache": "evals/answers/scifact_test_deepseek-v4.1-flash.cache.jsonl"
+  },
+  "grading": "code-only: citation span validity, citation recall/precision vs qrels gold docs, abstention; no LLM judge",
+  "n_cache_hits": 0,
+  "n_api_calls": 30,
+  "metrics": {
+    "n_items": 30,
+    "n_answerable": 20,
+    "n_no_relevant": 10,
+    "n_parse_ok": 30,
+    "parse_ok_rate": 1.0,
+    "n_raw_citations": 30,
+    "n_valid_citations": 29,
+    "citation_span_validity": 0.9666666666666667,
+    "n_recall_eligible": 17,
+    "citation_recall": 0.7058823529411765,
+    "citation_precision": 0.6206896551724138,
+    "n_answerable_gold_missing": 3,
+    "false_abstention_rate": 0.23529411764705882,
+    "correct_abstention_rate": 0.8,
+    "n_final_citations_checked": 16,
+    "final_citations_consistent_rate": 1.0
+  },
+  "records": [
+    {
+      "query_id": "1121",
+      "kind": "answerable",
+      "question": "Claim: Synaptic activity enhances local release of brain derived neurotrophic factor from postsynaptic dendrites.\nDo the contexts support or contradict this claim? Answer briefly, citing the evidence. If the contexts do not address the claim, abstain.",
+      "contexts": [
+        {
+          "index": 0,
+          "doc_id": "9ebc77149652e037",
+          "chunk_id": "87cbaab5b02d843d",
+          "text_sha256": "396036b953f80ce1ab445121e7283b7835ffba84b733ec662c9bbd4a0b8fa4ea"
+        },
+        {
+          "index": 1,
+          "doc_id": "d2c7a076063fe466",
+          "chunk_id": "b13c97332bd14354",
+          "text_sha256": "3c39746d45941190c69832da9cfa961ae04eeeeb0979347c569af0b27012be5d"
+        },
+        {
+          "index": 2,
+          "doc_id": "0ba66d4803f677b5",
+          "chunk_id": "9c23c5db2e3b54da",
+          "text_sha256": "0cb33ef652c8bf76fb18e3f08759ab4220c424bacfb49c95646261f43d136e6e"
+        },
+        {
+          "index": 3,
+          "doc_id": "8986c67d2497f648",
+          "chunk_id": "f6184335ceda9107",
+          "text_sha256": "c2e43308f6ba5731563cb660428921cde610735a210d2fff9f9467a43b834cf4"
+        },
+        {
+          "index": 4,
+          "doc_id": "3169fd7b0214e703",
+          "chunk_id": "914a625d5c986994",
+          "text_sha256": "dd059cc7518758074abdb9411a16da44774ec553bc2fedff9b96ff67c08c2420"
+        }
+      ],
+      "gold_doc_ids": [
+        "9ebc77149652e037"
+      ],
+      "raw_contents": [
+        "{\"answer\": \"The contexts support this claim. Context [0] reports that sLTP induction produces fast, sustained TrkB activation dependent on postsynaptically synthesized BDNF, and shows \\\"rapid, glutamate-uncaging-evoked, time-locked BDNF release from single dendritic spines using BDNF fused to superecliptic pHluorin.\\\" It also confirms the presence of postsynaptic BDNF, localizing endogenous BDNF to dendrites and spines of hippocampal CA1 pyramidal neurons.\", \"citations\": [{\"chunk_index\": 0, \"quote\": \"we also show rapid, glutamate-uncaging-evoked, time-locked BDNF release from single dendritic spines using BDNF fused to superecliptic pHluorin\"}, {\"chunk_index\": 0, \"quote\": \"We confirm the presence of postsynaptic BDNF using electron microscopy to localize endogenous BDNF to dendrites and spines of hippocampal CA1 pyramidal neurons.\"}], \"abstained\": false}"
+      ],
+      "response": {
+        "schema_version": 1,
+        "query": "Claim: Synaptic activity enhances local release of brain derived neurotrophic factor from postsynaptic dendrites.\nDo the contexts support or contradict this claim? Answer briefly, citing the evidence. If the contexts do not address the claim, abstain.",
+        "answer": "The contexts support this claim. Context [0] reports that sLTP induction produces fast, sustained TrkB activation dependent on postsynaptically synthesized BDNF, and shows \"rapid, glutamate-uncaging-evoked, time-locked BDNF release from single dendritic spines using BDNF fused to superecliptic pHluorin.\" It also confirms the presence of postsynaptic BDNF, localizing endogenous BDNF to dendrites and spines of hippocampal CA1 pyramidal neurons.",
+        "citations": [
+          {
+            "doc_id": "9ebc77149652e037",
+            "chunk_id": "87cbaab5b02d843d",
+            "source": "scifact/4456756.txt",
+            "content_hash": "396036b953f80ce1ab445121e7283b7835ffba84b733ec662c9bbd4a0b8fa4ea",
+            "heading_path": [],
+            "page": null,
+            "page_end": null,
+            "start_char": 1072,
+            "end_char": 1215,
+            "quote": "we also show rapid, glutamate-uncaging-evoked, time-locked BDNF release from single dendritic spines using BDNF fused to superecliptic pHluorin"
+          },
+          {
+            "doc_id": "9ebc77149652e037",
+            "chunk_id": "87cbaab5b02d843d",
+            "source": "scifact/4456756.txt",
+            "content_hash": "396036b953f80ce1ab445121e7283b7835ffba84b733ec662c9bbd4a0b8fa4ea",
+            "heading_path": [],
+            "page": null,
+            "page_end": null,
+            "start_char": 879,
+            "end_char": 1039,
+            "quote": "We confirm the presence of postsynaptic BDNF using electron microscopy to localize endogenous BDNF to dendrites and spines of hippocampal CA1 pyramidal neurons."
+          }
+        ],
+        "generator": "openai",
+        "abstained": false,
+        "model_name": "cline-pass/deepseek-v4.1-flash"
+      },
+      "error": null,
+      "grade": {
+        "query_id": "1121",
+        "kind": "answerable",
+        "parse_ok": true,
+        "abstained": false,
+        "n_raw_citations": 2,
+        "n_valid_citations": 2,
+        "n_valid_gold_citations": 2,
+        "final_citations_consistent": true,
+        "gold_doc_ids_in_context": [
+          "9ebc77149652e037"
+        ],
+        "cited_doc_ids": [
+          "9ebc77149652e037"
+        ],
+        "citation_recall": 1.0,
+        "citation_precision": 1.0,
+        "abstention_correct": true,
+        "error": null
+      }
+    },
+    {
+      "query_id": "1221",
+      "kind": "answerable",
+      "question": "Claim: The genomic aberrations found in matasteses are very similar to those found in the primary tumor.\nDo the contexts support or contradict this claim? Answer briefly, citing the evidence. If the contexts do not address the claim, abstain.",
+      "contexts": [
+        {
+          "index": 0,
+          "doc_id": "2aa99e1da27ffc39",
+          "chunk_id": "1be58d759589dc0e",
+          "text_sha256": "1957a730fba44f8324044ddb5cbb44c1abac9f844b2ee1dd166dd7e89ec5e859"
+        },
+        {
+          "index": 1,
+          "doc_id": "b62a8a27e6a973f8",
+          "chunk_id": "c10555813857f276",
+          "text_sha256": "170190421ee1ce4fd383767c247abfed022f5e68c8a315404c5a08ab8eeacc92"
+        },
+        {
+          "index": 2,
+          "doc_id": "5a17a674a45c416d",
+          "chunk_id": "98c6799ab4b37dae",
+          "text_sha256": "a7394db5827de92ed44a9555e7f19fc9bd4fdbf56138dcf8c7ed837bd6b5ab03"
+        },
+        {
+          "index": 3,
+          "doc_id": "6810692599820825",
+          "chunk_id": "1e458b432fc0fb52",
+          "text_sha256": "6b19c08fed8a1c57c621401c74925b6cf71d8e984d06997a97bafd3d56c4d46f"
+        },
+        {
+          "index": 4,
+          "doc_id": "1c774ae86b746a1f",
+          "chunk_id": "a38d3895055a4b18",
+          "text_sha256": "e4e091971afeb50abc48b8a393caeff53f46be62ae528d58d648348cbe0310a2"
+        }
+      ],
+      "gold_doc_ids": [
+        "4943b8029da023f5"
+      ],
+      "raw_contents": [
+        "{\"answer\": \"\", \"citations\": [], \"abstained\": true}"
+      ],
+      "response": {
+        "schema_version": 1,
+        "query": "Claim: The genomic aberrations found in matasteses are very similar to those found in the primary tumor.\nDo the contexts support or contradict this claim? Answer briefly, citing the evidence. If the contexts do not address the claim, abstain.",
+        "answer": "",
+        "citations": [],
+        "generator": "openai",
+        "abstained": true,
+        "model_name": "cline-pass/deepseek-v4.1-flash"
+      },
+      "error": null,
+      "grade": {
+        "query_id": "1221",
+        "kind": "answerable",
+        "parse_ok": true,
+        "abstained": true,
+        "n_raw_citations": 0,
+        "n_valid_citations": 0,
+        "n_valid_gold_citations": 0,
+        "final_citations_consistent": null,
+        "gold_doc_ids_in_context": [],
+        "cited_doc_ids": [],
+        "citation_recall": null,
+        "citation_precision": null,
+        "abstention_correct": null,
+        "error": null
+      }
+    },
+    {
+      "query_id": "1290",
+      "kind": "answerable",
+      "question": "Claim: There is an inverse relationship between hip fractures and statin use.\nDo the contexts support or contradict this claim? Answer briefly, citing the evidence. If the contexts do not address the claim, abstain.",
+      "contexts": [
+        {
+          "index": 0,
+          "doc_id": "77ebc6576729e965",
+          "chunk_id": "9c7473811fd874ff",
+          "text_sha256": "c308a4d282981b64809b02106e71530e2461611739d2c2692b269fa6469d373b"
+        },
+        {
+          "index": 1,
+          "doc_id": "5e2ce87c9231d535",
+          "chunk_id": "0d3f960f2f47585f",
+          "text_sha256": "3ffddfd3279f32bffebc179ddcf969ebcee4e5d6ce09a48bf9e56cfacc72edd8"
+        },
+        {
+          "index": 2,
+          "doc_id": "ab8d62102ee1a487",
+          "chunk_id": "49de5a454e041ada",
+          "text_sha256": "47d17663e0a1e20b6417b832fec71966e15669290cd515ba0ca9f7b8261254e6"
+        },
+        {
+          "index": 3,
+          "doc_id": "6099743b2a36cb1c",
+          "chunk_id": "f4cb934088e2e69b",
+          "text_sha256": "431a2a5ef23351e7596f9b26296e85bee6345fd39c00171619af0b01cb4a8c36"
+        },
+        {
+          "index": 4,
+          "doc_id": "d3853b8108a9eddd",
+          "chunk_id": "e0777d4b95976492",
+          "text_sha256": "62585d329bcfe08c0cb47e57b4b0beb11ff42010e913c8b54db2ab78c061bd56"
+        }
+      ],
+      "gold_doc_ids": [
+        "77ebc6576729e965"
+      ],
+      "raw_contents": [
+        "{\"answer\":\"The contexts support the claim. In an elderly Medicare/Medicaid case-control study, statin use was associated with a significant reduction in hip fracture risk, indicating an inverse relationship.\",\"citations\":[{\"chunk_index\":0,\"quote\":\"Use of statins in either the prior 180 days (adjusted OR, 0.50; 95% confidence interval [CI], 0.33-0.76) or prior 3 years (adjusted OR, 0.57; 95% CI, 0.40-0.82) was associated with a significant reduction in the risk of hip fracture\"}],\"abstained\":false}"
+      ],
+      "response": {
+        "schema_version": 1,
+        "query": "Claim: There is an inverse relationship between hip fractures and statin use.\nDo the contexts support or contradict this claim? Answer briefly, citing the evidence. If the contexts do not address the claim, abstain.",
+        "answer": "The contexts support the claim. In an elderly Medicare/Medicaid case-control study, statin use was associated with a significant reduction in hip fracture risk, indicating an inverse relationship.",
+        "citations": [
+          {
+            "doc_id": "77ebc6576729e965",
+            "chunk_id": "9c7473811fd874ff",
+            "source": "scifact/4687948.txt",
+            "content_hash": "c308a4d282981b64809b02106e71530e2461611739d2c2692b269fa6469d373b",
+            "heading_path": [],
+            "page": null,
+            "page_end": null,
+            "start_char": 1161,
+            "end_char": 1393,
+            "quote": "Use of statins in either the prior 180 days (adjusted OR, 0.50; 95% confidence interval [CI], 0.33-0.76) or prior 3 years (adjusted OR, 0.57; 95% CI, 0.40-0.82) was associated with a significant reduction in the risk of hip fracture"
+          }
+        ],
+        "generator": "openai",
+        "abstained": false,
+        "model_name": "cline-pass/deepseek-v4.1-flash"
+      },
+      "error": null,
+      "grade": {
+        "query_id": "1290",
+        "kind": "answerable",
+        "parse_ok": true,
+        "abstained": false,
+        "n_raw_citations": 1,
+        "n_valid_citations": 1,
+        "n_valid_gold_citations": 1,
+        "final_citations_consistent": true,
+        "gold_doc_ids_in_context": [
+          "77ebc6576729e965"
+        ],
+        "cited_doc_ids": [
+          "77ebc6576729e965"
+        ],
+        "citation_recall": 1.0,
+        "citation_precision": 1.0,
+        "abstention_correct": true,
+        "error": null
+      }
+    },
+    {
+      "query_id": "130",
+      "kind": "answerable",
+      "question": "Claim: Articles published in open access format are more likely to be cited than traditional journals.\nDo the contexts support or contradict this claim? Answer briefly, citing the evidence. If the contexts do not address the claim, abstain.",
+      "contexts": [
+        {
+          "index": 0,
+          "doc_id": "000e0f41dc9fb161",
+          "chunk_id": "bd87f4845f57764d",
+          "text_sha256": "7e0b18399d899ca0768438cb47a1463dc94a3189b2110b1b8ea3eb8f67bfd7bb"
+        },
+        {
+          "index": 1,
+          "doc_id": "000e0f41dc9fb161",
+          "chunk_id": "32a485a652829ed7",
+          "text_sha256": "53cb388607010bd9c7ca2275948102b14fcd687defb15f7484d4620a5ccc8413"
+        },
+        {
+          "index": 2,
+          "doc_id": "000e0f41dc9fb161",
+          "chunk_id": "d6045856aa93f409",
+          "text_sha256": "38d69883589e0eb41e8537e588d74f0367489118d56d6cc6aad523b65f0651af"
+        },
+        {
+          "index": 3,
+          "doc_id": "83fa8a88f0a77b3d",
+          "chunk_id": "f07fa0bcbb5c19cd",
+          "text_sha256": "99cd18aa93269347d02302c02c412895584e3d2a4321ba6332ef2cf9e19f4a2a"
+        },
+        {
+          "index": 4,
+          "doc_id": "93bf4d4211728a06",
+          "chunk_id": "1d2bf90fea8ce4cc",
+          "text_sha256": "f5eb5de92ea694349971166f1cb01f5f8916831fc69eabbbac5e7b84c2617217"
+        }
+      ],
+      "gold_doc_ids": [
+        "000e0f41dc9fb161"
+      ],
+      "raw_contents": [
+        "{\"answer\": \"The contexts support this claim: one reports robust evidence that open-access articles are more immediately recognized and cited than non-OA articles, being twice as likely to be cited 4 to 10 months after publication and almost three times as likely between 10 and 16 months. Another context notes that the evidence argues most strongly for a time advantage in citation for OA articles. Thus the supplied contexts endorse a citation advantage for open-access publication.\", \"citations\": [{\"chunk_index\": 1, \"quote\": \"It provides robust evidence that open-access articles (OA articles) are more immediately recognized and cited than non-OA articles.\"}, {\"chunk_index\": 1, \"quote\": \"They are twice as likely to be cited 4 to 10 months after publication and almost three times as likely between 10 and 16 months.\"}, {\"chunk_index\": 0, \"quote\": \"Moreover, although the evidence from the current analysis argues most strongly for a time advantage in citation for OA articles, a study over longer periods will reveal whether this translates into a sustained increase in the number of citations.\"}], \"abstained\": false}"
+      ],
+      "response": {
+        "schema_version": 1,
+        "query": "Claim: Articles published in open access format are more likely to be cited than traditional journals.\nDo the contexts support or contradict this claim? Answer briefly, citing the evidence. If the contexts do not address the claim, abstain.",
+        "answer": "The contexts support this claim: one reports robust evidence that open-access articles are more immediately recognized and cited than non-OA articles, being twice as likely to be cited 4 to 10 months after publication and almost three times as likely between 10 and 16 months. Another context notes that the evidence argues most strongly for a time advantage in citation for OA articles. Thus the supplied contexts endorse a citation advantage for open-access publication.",
+        "citations": [
+          {
+            "doc_id": "000e0f41dc9fb161",
+            "chunk_id": "32a485a652829ed7",
+            "source": "scifact/27768226.txt",
+            "content_hash": "a1c7f4d90dd8ab81814f10f02d9b42c0143503be8c4d7319599416e4f123dbe9",
+            "heading_path": [],
+            "page": null,
+            "page_end": null,
+            "start_char": 156,
+            "end_char": 287,
+            "quote": "It provides robust evidence that open-access articles (OA articles) are more immediately recognized and cited than non-OA articles."
+          },
+          {
+            "doc_id": "000e0f41dc9fb161",
+            "chunk_id": "32a485a652829ed7",
+            "source": "scifact/27768226.txt",
+            "content_hash": "a1c7f4d90dd8ab81814f10f02d9b42c0143503be8c4d7319599416e4f123dbe9",
+            "heading_path": [],
+            "page": null,
+            "page_end": null,
+            "start_char": 1684,
+            "end_char": 1812,
+            "quote": "They are twice as likely to be cited 4 to 10 months after publication and almost three times as likely between 10 and 16 months."
+          },
+          {
+            "doc_id": "000e0f41dc9fb161",
+            "chunk_id": "bd87f4845f57764d",
+            "source": "scifact/27768226.txt",
+            "content_hash": "a1c7f4d90dd8ab81814f10f02d9b42c0143503be8c4d7319599416e4f123dbe9",
+            "heading_path": [],
+            "page": null,
+            "page_end": null,
+            "start_char": 6517,
+            "end_char": 6763,
+            "quote": "Moreover, although the evidence from the current analysis argues most strongly for a time advantage in citation for OA articles, a study over longer periods will reveal whether this translates into a sustained increase in the number of citations."
+          }
+        ],
+        "generator": "openai",
+        "abstained": false,
+        "model_name": "cline-pass/deepseek-v4.1-flash"
+      },
+      "error": null,
+      "grade": {
+        "query_id": "130",
+        "kind": "answerable",
+        "parse_ok": true,
+        "abstained": false,
+        "n_raw_citations": 3,
+        "n_valid_citations": 3,
+        "n_valid_gold_citations": 3,
+        "final_citations_consistent": true,
+        "gold_doc_ids_in_context": [
+          "000e0f41dc9fb161"
+        ],
+        "cited_doc_ids": [
+          "000e0f41dc9fb161"
+        ],
+        "citation_recall": 1.0,
+        "citation_precision": 1.0,
+        "abstention_correct": true,
+        "error": null
+      }
+    },
+    {
+      "query_id": "198",
+      "kind": "answerable",
+      "question": "Claim: CCL19 is absent within dLNs.\nDo the contexts support or contradict this claim? Answer briefly, citing the evidence. If the contexts do not address the claim, abstain.",
+      "contexts": [
+        {
+          "index": 0,
+          "doc_id": "ad60ff46b6309668",
+          "chunk_id": "fae1c149a8f397df",
+          "text_sha256": "6dbf7ee456a26ae9f69b76cd3e72fe8b2c82073ea4bf7f53cb414fe6cad9ee19"
+        },
+        {
+          "index": 1,
+          "doc_id": "fd31adf2371eeffb",
+          "chunk_id": "ac7ff2fe603e8592",
+          "text_sha256": "50d3a35ae26d4453bf279e8f00810e8a4d5096f615d5f43f39a8241c892ceea0"
+        },
+        {
+          "index": 2,
+          "doc_id": "da2cb149f157ff84",
+          "chunk_id": "5d00a1ec75855078",
+          "text_sha256": "06299a5d681077886993f797897d34ba9d51beb3616948ada65f4d0216c0e946"
+        },
+        {
+          "index": 3,
+          "doc_id": "3dee64df02c10a61",
+          "chunk_id": "b7dcd9e80ddce0bb",
+          "text_sha256": "afdae1ade990d3d1313daa42bdf75f13d6969a58d41a97b8e6df67a85458abeb"
+        },
+        {
+          "index": 4,
+          "doc_id": "3c4c16dfe7c2fd1b",
+          "chunk_id": "ab0ef66fdfda1ff9",
+          "text_sha256": "37111d687b8f20d90cbe79468c447cecdf31fc8617d591384ab91d76ff9bed16"
+        }
+      ],
+      "gold_doc_ids": [
+        "3c4c16dfe7c2fd1b"
+      ],
+      "raw_contents": [
+        "{\"answer\":\"\",\"citations\":[],\"abstained\":true}"
+      ],
+      "response": {
+        "schema_version": 1,
+        "query": "Claim: CCL19 is absent within dLNs.\nDo the contexts support or contradict this claim? Answer briefly, citing the evidence. If the contexts do not address the claim, abstain.",
+        "answer": "",
+        "citations": [],
+        "generator": "openai",
+        "abstained": true,
+        "model_name": "cline-pass/deepseek-v4.1-flash"
+      },
+      "error": null,
+      "grade": {
+        "query_id": "198",
+        "kind": "answerable",
+        "parse_ok": true,
+        "abstained": true,
+        "n_raw_citations": 0,
+        "n_valid_citations": 0,
+        "n_valid_gold_citations": 0,
+        "final_citations_consistent": null,
+        "gold_doc_ids_in_context": [
+          "3c4c16dfe7c2fd1b"
+        ],
+        "cited_doc_ids": [],
+        "citation_recall": 0.0,
+        "citation_precision": null,
+        "abstention_correct": false,
+        "error": null
+      }
+    },
+    {
+      "query_id": "261",
+      "kind": "answerable",
+      "question": "Claim: Chronic aerobic exercise alters endothelial function, improving vasodilating mechanisms mediated by NO.\nDo the contexts support or contradict this claim? Answer briefly, citing the evidence. If the contexts do not address the claim, abstain.",
+      "contexts": [
+        {
+          "index": 0,
+          "doc_id": "f798e9b3675d0a1c",
+          "chunk_id": "57b7361ae452c59d",
+          "text_sha256": "473d662afa815b30cda6311399b09f5f694b273efc575020863a075cb4cdbe74"
+        },
+        {
+          "index": 1,
+          "doc_id": "176cc324eb9fe78b",
+          "chunk_id": "fc0754b90fb856d2",
+          "text_sha256": "4eb8bc7c432e97bce16248b409178ae00ab1dcc5b0c55b1a7d1366105273b60d"
+        },
+        {
+          "index": 2,
+          "doc_id": "23b22f533d3140ff",
+          "chunk_id": "ac8aff5dfd3728ae",
+          "text_sha256": "cc6f6cf3d69719e7a98d1d6f371dc6134f8d0ee2611413dc909d2cc4f85e0a96"
+        },
+        {
+          "index": 3,
+          "doc_id": "f348eb1c8c529235",
+          "chunk_id": "1ba65cbd4d18f313",
+          "text_sha256": "e6247aca244891da89407e76890d2ceacdba5b77bb1c7b28a98fae5de3e24295"
+        },
+        {
+          "index": 4,
+          "doc_id": "92e5682727fcd265",
+          "chunk_id": "9754494c3348fa27",
+          "text_sha256": "46d8f1039c7e764c4df049ed423240e4dbf48d152c6b7730057419b193bd9a46"
+        }
+      ],
+      "gold_doc_ids": [
+        "66588637fe5cf32c",
+        "92e5682727fcd265"
+      ],
+      "raw_contents": [
+        "{\"answer\": \"The contexts support the claim: chronic aerobic exercise alters endothelial function and improves NO-mediated vasodilating mechanisms. Studies report increased NO production/NOx, increased cGMP, enhanced bradykinin-mediated relaxation with increased ecNOS mRNA, and upregulated eNOS/iNOS expression after training.\", \"citations\": [{\"chunk_index\": 0, \"quote\": \"The present study suggests that even a mild regular aerobic-endurance exercise increases NO production in previously sedentary older humans, which may have beneficial effects (i.e., antihypertensive and antiatherosclerotic effects by endogenous NO) on the cardiovascular system.\"}, {\"chunk_index\": 2, \"quote\": \"The present study suggests that chronic exercise causes an increase in production of NO and a decrease in production of ET-1 in humans, which may produce beneficial effects (i.e., vasodilative and antiatherosclerotic) on the cardiovascular system.\"}, {\"chunk_index\": 4, \"quote\": \"These data indicate that exercise training enhances bradykinin-mediated relaxation of collateral-dependent LCx arterioles isolated after chronic coronary occlusion, most likely because of effects on ecNOS mRNA expression and increased production of NO.\"}, {\"chunk_index\": 1, \"quote\": \"Our results show that chronic exercise increases both iNOS and eNOS gene expression in endothelium.\"}], \"abstained\": false}"
+      ],
+      "response": {
+        "schema_version": 1,
+        "query": "Claim: Chronic aerobic exercise alters endothelial function, improving vasodilating mechanisms mediated by NO.\nDo the contexts support or contradict this claim? Answer briefly, citing the evidence. If the contexts do not address the claim, abstain.",
+        "answer": "The contexts support the claim: chronic aerobic exercise alters endothelial function and improves NO-mediated vasodilating mechanisms. Studies report increased NO production/NOx, increased cGMP, enhanced bradykinin-mediated relaxation with increased ecNOS mRNA, and upregulated eNOS/iNOS expression after training.",
+        "citations": [
+          {
+            "doc_id": "f798e9b3675d0a1c",
+            "chunk_id": "57b7361ae452c59d",
+            "source": "scifact/32322418.txt",
+            "content_hash": "473d662afa815b30cda6311399b09f5f694b273efc575020863a075cb4cdbe74",
+            "heading_path": [],
+            "page": null,
+            "page_end": null,
+            "start_char": 1569,
+            "end_char": 1847,
+            "quote": "The present study suggests that even a mild regular aerobic-endurance exercise increases NO production in previously sedentary older humans, which may have beneficial effects (i.e., antihypertensive and antiatherosclerotic effects by endogenous NO) on the cardiovascular system."
+          },
+          {
+            "doc_id": "23b22f533d3140ff",
+            "chunk_id": "ac8aff5dfd3728ae",
+            "source": "scifact/25822299.txt",
+            "content_hash": "cc6f6cf3d69719e7a98d1d6f371dc6134f8d0ee2611413dc909d2cc4f85e0a96",
+            "heading_path": [],
+            "page": null,
+            "page_end": null,
+            "start_char": 2117,
+            "end_char": 2364,
+            "quote": "The present study suggests that chronic exercise causes an increase in production of NO and a decrease in production of ET-1 in humans, which may produce beneficial effects (i.e., vasodilative and antiatherosclerotic) on the cardiovascular system."
+          },
+          {
+            "doc_id": "92e5682727fcd265",
+            "chunk_id": "9754494c3348fa27",
+            "source": "scifact/1122279.txt",
+            "content_hash": "46d8f1039c7e764c4df049ed423240e4dbf48d152c6b7730057419b193bd9a46",
+            "heading_path": [],
+            "page": null,
+            "page_end": null,
+            "start_char": 1818,
+            "end_char": 2070,
+            "quote": "These data indicate that exercise training enhances bradykinin-mediated relaxation of collateral-dependent LCx arterioles isolated after chronic coronary occlusion, most likely because of effects on ecNOS mRNA expression and increased production of NO."
+          },
+          {
+            "doc_id": "176cc324eb9fe78b",
+            "chunk_id": "fc0754b90fb856d2",
+            "source": "scifact/46743299.txt",
+            "content_hash": "4eb8bc7c432e97bce16248b409178ae00ab1dcc5b0c55b1a7d1366105273b60d",
+            "heading_path": [],
+            "page": null,
+            "page_end": null,
+            "start_char": 1201,
+            "end_char": 1300,
+            "quote": "Our results show that chronic exercise increases both iNOS and eNOS gene expression in endothelium."
+          }
+        ],
+        "generator": "openai",
+        "abstained": false,
+        "model_name": "cline-pass/deepseek-v4.1-flash"
+      },
+      "error": null,
+      "grade": {
+        "query_id": "261",
+        "kind": "answerable",
+        "parse_ok": true,
+        "abstained": false,
+        "n_raw_citations": 4,
+        "n_valid_citations": 4,
+        "n_valid_gold_citations": 1,
+        "final_citations_consistent": true,
+        "gold_doc_ids_in_context": [
+          "92e5682727fcd265"
+        ],
+        "cited_doc_ids": [
+          "176cc324eb9fe78b",
+          "23b22f533d3140ff",
+          "92e5682727fcd265",
+          "f798e9b3675d0a1c"
+        ],
+        "citation_recall": 1.0,
+        "citation_precision": 0.25,
+        "abstention_correct": true,
+        "error": null
+      }
+    },
+    {
+      "query_id": "275",
+      "kind": "answerable",
+      "question": "Claim: Combining phosphatidylinositide 3-kinase and MEK 1/2 inhibitors is effective at treating KRAS mutant tumors.\nDo the contexts support or contradict this claim? Answer briefly, citing the evidence. If the contexts do not address the claim, abstain.",
+      "contexts": [
+        {
+          "index": 0,
+          "doc_id": "e9bf7dc8476b19c8",
+          "chunk_id": "2e08f5aa85a0c7ef",
+          "text_sha256": "18ce4512cabaf0e4d2ad1fd475357b9efd1efe5e6a369f0177af79075aed450f"
+        },
+        {
+          "index": 1,
+          "doc_id": "5e848fcd5f35daf7",
+          "chunk_id": "c1b8033fb27af357",
+          "text_sha256": "83a49f5e07500045dcc080e4fdbe669240851fbefeb2abcf725d6adf209203d5"
+        },
+        {
+          "index": 2,
+          "doc_id": "617e17b069009462",
+          "chunk_id": "2a81f4bdaf7fdbf4",
+          "text_sha256": "cd7e8161c822960481814a7a1cdf08cd7ddd0846d147b5a3569748e576cdcab6"
+        },
+        {
+          "index": 3,
+          "doc_id": "477df1b6af29193e",
+          "chunk_id": "2ce670fac2ce3ee1",
+          "text_sha256": "9472650659a526c84f02bc295faf2a77d27d42b3fa802ff4f3b8506a07e7a810"
+        },
+        {
+          "index": 4,
+          "doc_id": "d72990d449de8d50",
+          "chunk_id": "b54bd6e47f6f44ec",
+          "text_sha256": "cd27057c183614e470aba565bc3bab05652869e30dad5f4bc2b1501327b3dd1a"
+        }
+      ],
+      "gold_doc_ids": [
+        "17749489dc5b55be",
+        "4cb62d6cc548b9c3",
+        "e9bf7dc8476b19c8"
+      ],
+      "raw_contents": [
+        "{\"answer\": \"The contexts support the claim: in a Kras-mutant mouse lung cancer model, combining the PI3K/mTOR inhibitor NVP-BEZ235 with the MEK inhibitor ARRY-142886 produced marked synergy in shrinking Kras-mutant cancers, and the authors suggest PI3K-mTOR inhibitors combined with MEK inhibitors may effectively treat KRAS-mutated lung cancers.\", \"citations\": [{\"chunk_index\": 0, \"quote\": \"However, when NVP-BEZ235 was combined with a mitogen-activated protein kinase kinase (MEK) inhibitor, ARRY-142886, there was marked synergy in shrinking these Kras-mutant cancers.\"}, {\"chunk_index\": 0, \"quote\": \"These in vivo studies suggest that inhibitors of the PI3K-mTOR pathway may be active in cancers with PIK3CA mutations and, when combined with MEK inhibitors, may effectively treat KRAS mutated lung cancers.\"}], \"abstained\": false}"
+      ],
+      "response": {
+        "schema_version": 1,
+        "query": "Claim: Combining phosphatidylinositide 3-kinase and MEK 1/2 inhibitors is effective at treating KRAS mutant tumors.\nDo the contexts support or contradict this claim? Answer briefly, citing the evidence. If the contexts do not address the claim, abstain.",
+        "answer": "The contexts support the claim: in a Kras-mutant mouse lung cancer model, combining the PI3K/mTOR inhibitor NVP-BEZ235 with the MEK inhibitor ARRY-142886 produced marked synergy in shrinking Kras-mutant cancers, and the authors suggest PI3K-mTOR inhibitors combined with MEK inhibitors may effectively treat KRAS-mutated lung cancers.",
+        "citations": [
+          {
+            "doc_id": "e9bf7dc8476b19c8",
+            "chunk_id": "2e08f5aa85a0c7ef",
+            "source": "scifact/4961038.txt",
+            "content_hash": "18ce4512cabaf0e4d2ad1fd475357b9efd1efe5e6a369f0177af79075aed450f",
+            "heading_path": [],
+            "page": null,
+            "page_end": null,
+            "start_char": 1223,
+            "end_char": 1402,
+            "quote": "However, when NVP-BEZ235 was combined with a mitogen-activated protein kinase kinase (MEK) inhibitor, ARRY-142886, there was marked synergy in shrinking these Kras-mutant cancers."
+          },
+          {
+            "doc_id": "e9bf7dc8476b19c8",
+            "chunk_id": "2e08f5aa85a0c7ef",
+            "source": "scifact/4961038.txt",
+            "content_hash": "18ce4512cabaf0e4d2ad1fd475357b9efd1efe5e6a369f0177af79075aed450f",
+            "heading_path": [],
+            "page": null,
+            "page_end": null,
+            "start_char": 1403,
+            "end_char": 1609,
+            "quote": "These in vivo studies suggest that inhibitors of the PI3K-mTOR pathway may be active in cancers with PIK3CA mutations and, when combined with MEK inhibitors, may effectively treat KRAS mutated lung cancers."
+          }
+        ],
+        "generator": "openai",
+        "abstained": false,
+        "model_name": "cline-pass/deepseek-v4.1-flash"
+      },
+      "error": null,
+      "grade": {
+        "query_id": "275",
+        "kind": "answerable",
+        "parse_ok": true,
+        "abstained": false,
+        "n_raw_citations": 2,
+        "n_valid_citations": 2,
+        "n_valid_gold_citations": 2,
+        "final_citations_consistent": true,
+        "gold_doc_ids_in_context": [
+          "e9bf7dc8476b19c8"
+        ],
+        "cited_doc_ids": [
+          "e9bf7dc8476b19c8"
+        ],
+        "citation_recall": 1.0,
+        "citation_precision": 1.0,
+        "abstention_correct": true,
+        "error": null
+      }
+    },
+    {
+      "query_id": "338",
+      "kind": "answerable",
+      "question": "Claim: Dexamethasone decreases risk of postoperative bleeding.\nDo the contexts support or contradict this claim? Answer briefly, citing the evidence. If the contexts do not address the claim, abstain.",
+      "contexts": [
+        {
+          "index": 0,
+          "doc_id": "27e9bd253a443165",
+          "chunk_id": "9baa578bfcdc7cca",
+          "text_sha256": "faca5a6f64f4260fc26b127e7b4e2135bc4833eb7b893f933fc9f645809e3351"
+        },
+        {
+          "index": 1,
+          "doc_id": "77fdfc41593bbc9b",
+          "chunk_id": "f7f5b704357c2bac",
+          "text_sha256": "ff0061df4c60a15a24651c63882b0863be76e6713e4796ae102fc6563c503faf"
+        },
+        {
+          "index": 2,
+          "doc_id": "38b03ff11485edf5",
+          "chunk_id": "7ababb228f0dcdae",
+          "text_sha256": "debd4dde40db8a9ea8f17e32a145d23bc46bbc31cc8b558e518a654fa4e9797e"
+        },
+        {
+          "index": 3,
+          "doc_id": "6291d37676a07112",
+          "chunk_id": "6540df309d3f0709",
+          "text_sha256": "89d36d475702387230cb47e1d87ba1507cee9cc0f0a472acb87c755b1a06b5fb"
+        },
+        {
+          "index": 4,
+          "doc_id": "87cd3c2a712e42c1",
+          "chunk_id": "5b3d8fd0a8717f26",
+          "text_sha256": "c3a59ae1ad6fbf1a558c0493deb841c03b294c41a67d596d8b3a4d60fa439ecd"
+        }
+      ],
+      "gold_doc_ids": [
+        "27e9bd253a443165"
+      ],
+      "raw_contents": [
+        "{\"answer\": \"The contexts contradict this claim. Context [0] reports that dexamethasone was associated with an increased risk of postoperative bleeding after pediatric tonsillectomy, with bleeding in 24% of children receiving 0.5 mg/kg versus 4% of those receiving placebo. It concludes that dexamethasone decreased PONV dose dependently but was associated with an increased risk of postoperative bleeding.\", \"citations\": [{\"chunk_index\": 0, \"quote\": \"dexamethasone decreased the risk of PONV dose dependently but was associated with an increased risk of postoperative bleeding.\"}, {\"chunk_index\": 0, \"quote\": \"Two of 53 (4%; 95% CI, 0.5%-13%) children who received placebo had bleeding compared with 6 of 53 (11%; 95% CI, 4%-23%), 2 of 51 (4%; 95% CI, 0.5%-13%), and 12 of 50 (24%; 95% CI, 13%-38%) who received dexamethasone at 0.05, 0.15, and 0.5 mg/kg, respectively (P = .003).\"}], \"abstained\": false}"
+      ],
+      "response": {
+        "schema_version": 1,
+        "query": "Claim: Dexamethasone decreases risk of postoperative bleeding.\nDo the contexts support or contradict this claim? Answer briefly, citing the evidence. If the contexts do not address the claim, abstain.",
+        "answer": "The contexts contradict this claim. Context [0] reports that dexamethasone was associated with an increased risk of postoperative bleeding after pediatric tonsillectomy, with bleeding in 24% of children receiving 0.5 mg/kg versus 4% of those receiving placebo. It concludes that dexamethasone decreased PONV dose dependently but was associated with an increased risk of postoperative bleeding.",
+        "citations": [
+          {
+            "doc_id": "27e9bd253a443165",
+            "chunk_id": "9baa578bfcdc7cca",
+            "source": "scifact/23349986.txt",
+            "content_hash": "faca5a6f64f4260fc26b127e7b4e2135bc4833eb7b893f933fc9f645809e3351",
+            "heading_path": [],
+            "page": null,
+            "page_end": null,
+            "start_char": 2145,
+            "end_char": 2271,
+            "quote": "dexamethasone decreased the risk of PONV dose dependently but was associated with an increased risk of postoperative bleeding."
+          },
+          {
+            "doc_id": "27e9bd253a443165",
+            "chunk_id": "9baa578bfcdc7cca",
+            "source": "scifact/23349986.txt",
+            "content_hash": "faca5a6f64f4260fc26b127e7b4e2135bc4833eb7b893f933fc9f645809e3351",
+            "heading_path": [],
+            "page": null,
+            "page_end": null,
+            "start_char": 1527,
+            "end_char": 1797,
+            "quote": "Two of 53 (4%; 95% CI, 0.5%-13%) children who received placebo had bleeding compared with 6 of 53 (11%; 95% CI, 4%-23%), 2 of 51 (4%; 95% CI, 0.5%-13%), and 12 of 50 (24%; 95% CI, 13%-38%) who received dexamethasone at 0.05, 0.15, and 0.5 mg/kg, respectively (P = .003)."
+          }
+        ],
+        "generator": "openai",
+        "abstained": false,
+        "model_name": "cline-pass/deepseek-v4.1-flash"
+      },
+      "error": null,
+      "grade": {
+        "query_id": "338",
+        "kind": "answerable",
+        "parse_ok": true,
+        "abstained": false,
+        "n_raw_citations": 2,
+        "n_valid_citations": 2,
+        "n_valid_gold_citations": 2,
+        "final_citations_consistent": true,
+        "gold_doc_ids_in_context": [
+          "27e9bd253a443165"
+        ],
+        "cited_doc_ids": [
+          "27e9bd253a443165"
+        ],
+        "citation_recall": 1.0,
+        "citation_precision": 1.0,
+        "abstention_correct": true,
+        "error": null
+      }
+    },
+    {
+      "query_id": "399",
+      "kind": "answerable",
+      "question": "Claim: Exposure to fine particulate air pollution is relate to anxiety prevalence.\nDo the contexts support or contradict this claim? Answer briefly, citing the evidence. If the contexts do not address the claim, abstain.",
+      "contexts": [
+        {
+          "index": 0,
+          "doc_id": "28612d26fae52d57",
+          "chunk_id": "2e7863110cc35ef7",
+          "text_sha256": "17cd8632cb0732e27a18f6b209c27b0fe8ebaf7c97c76b9c212b2fd060962c1d"
+        },
+        {
+          "index": 1,
+          "doc_id": "0db040c5c1f429e8",
+          "chunk_id": "43dfedb1b5835d97",
+          "text_sha256": "5bb92f9cecd8c4a05cadf360a94a3d6a2b41532672fc336b7e854e57625609d9"
+        },
+        {
+          "index": 2,
+          "doc_id": "eaa8b64f4446c280",
+          "chunk_id": "983a27586def16cc",
+          "text_sha256": "418402b8412ee1cb1d16d695a5f22da27a84c0333e618f9c07aad860e1c6a70d"
+        },
+        {
+          "index": 3,
+          "doc_id": "9ceacb23121d4f31",
+          "chunk_id": "4e7094b775ce3500",
+          "text_sha256": "d926b426a9f3facc43ed49a9f1635cfbaf191d6408d0d0d590164f41b2be8a2b"
+        },
+        {
+          "index": 4,
+          "doc_id": "eaa8b64f4446c280",
+          "chunk_id": "c6a6f565801eaf68",
+          "text_sha256": "c467f30dc4ed3b1a09571ca26052f953513c4efeafd5f1eef4d88b458aad27e8"
+        }
+      ],
+      "gold_doc_ids": [
+        "28612d26fae52d57"
+      ],
+      "raw_contents": [
+        "{\"answer\": \"The contexts support the claim. Context [0] reports that higher past exposure to fine particulate matter (PM2.5) was associated with prevalent high symptoms of anxiety, with significantly increased odds of high anxiety symptoms observed for multiple averaging periods. No context contradicts this association.\", \"citations\": [{\"chunk_index\": 0, \"quote\": \"Exposure to fine particulate matter (PM2.5) was associated with high symptoms of anxiety, with more recent exposures potentially more relevant than more distant exposures.\"}, {\"chunk_index\": 0, \"quote\": \"Significantly increased odds of high anxiety symptoms were observed with higher exposure to PM2.5 for multiple averaging periods\"}], \"abstained\": false}"
+      ],
+      "response": {
+        "schema_version": 1,
+        "query": "Claim: Exposure to fine particulate air pollution is relate to anxiety prevalence.\nDo the contexts support or contradict this claim? Answer briefly, citing the evidence. If the contexts do not address the claim, abstain.",
+        "answer": "The contexts support the claim. Context [0] reports that higher past exposure to fine particulate matter (PM2.5) was associated with prevalent high symptoms of anxiety, with significantly increased odds of high anxiety symptoms observed for multiple averaging periods. No context contradicts this association.",
+        "citations": [
+          {
+            "doc_id": "28612d26fae52d57",
+            "chunk_id": "2e7863110cc35ef7",
+            "source": "scifact/791050.txt",
+            "content_hash": "17cd8632cb0732e27a18f6b209c27b0fe8ebaf7c97c76b9c212b2fd060962c1d",
+            "heading_path": [],
+            "page": null,
+            "page_end": null,
+            "start_char": 1917,
+            "end_char": 2088,
+            "quote": "Exposure to fine particulate matter (PM2.5) was associated with high symptoms of anxiety, with more recent exposures potentially more relevant than more distant exposures."
+          },
+          {
+            "doc_id": "28612d26fae52d57",
+            "chunk_id": "2e7863110cc35ef7",
+            "source": "scifact/791050.txt",
+            "content_hash": "17cd8632cb0732e27a18f6b209c27b0fe8ebaf7c97c76b9c212b2fd060962c1d",
+            "heading_path": [],
+            "page": null,
+            "page_end": null,
+            "start_char": 1292,
+            "end_char": 1420,
+            "quote": "Significantly increased odds of high anxiety symptoms were observed with higher exposure to PM2.5 for multiple averaging periods"
+          }
+        ],
+        "generator": "openai",
+        "abstained": false,
+        "model_name": "cline-pass/deepseek-v4.1-flash"
+      },
+      "error": null,
+      "grade": {
+        "query_id": "399",
+        "kind": "answerable",
+        "parse_ok": true,
+        "abstained": false,
+        "n_raw_citations": 2,
+        "n_valid_citations": 2,
+        "n_valid_gold_citations": 2,
+        "final_citations_consistent": true,
+        "gold_doc_ids_in_context": [
+          "28612d26fae52d57"
+        ],
+        "cited_doc_ids": [
+          "28612d26fae52d57"
+        ],
+        "citation_recall": 1.0,
+        "citation_precision": 1.0,
+        "abstention_correct": true,
+        "error": null
+      }
+    },
+    {
+      "query_id": "415",
+      "kind": "answerable",
+      "question": "Claim: Female carriers of the Apolipoprotein E4 (APOE4) allele have increased risk for dementia.\nDo the contexts support or contradict this claim? Answer briefly, citing the evidence. If the contexts do not address the claim, abstain.",
+      "contexts": [
+        {
+          "index": 0,
+          "doc_id": "23369de050224bcc",
+          "chunk_id": "f619fe2d4fa16c72",
+          "text_sha256": "5934eb6db89a553c0dc01e6cc8677b7bff6f5897dd3df921b14823f100eb96f7"
+        },
+        {
+          "index": 1,
+          "doc_id": "d9906d58ce60ace6",
+          "chunk_id": "b95f002d03747e7a",
+          "text_sha256": "456f0427ae2bc8690f0dda10601d5810cc7069e2102f388cd528224496665ac2"
+        },
+        {
+          "index": 2,
+          "doc_id": "e9915c7f0d65c956",
+          "chunk_id": "58fa2dc3f0c9f2ca",
+          "text_sha256": "5a88cb422e25b54cd9a5e5c876cb2015fb19706a4c01d1e7eb570621baf2de55"
+        },
+        {
+          "index": 3,
+          "doc_id": "8809d98bfb4e8657",
+          "chunk_id": "13d8e1d47c8fa0a3",
+          "text_sha256": "0587569825f58b2261dced7468d383932e77e3c041d1172e8eb538341bb7afed"
+        },
+        {
+          "index": 4,
+          "doc_id": "dcdab8e9be5c07ff",
+          "chunk_id": "0de21e1bde396721",
+          "text_sha256": "07c7531604ea4f03e3a5bae605553c6080c4f68e0cf0cdd6dbf843732f256d93"
+        }
+      ],
+      "gold_doc_ids": [
+        "dcdab8e9be5c07ff"
+      ],
+      "raw_contents": [
+        "{\"answer\":\"The contexts support the claim: APOE4 is described as a major risk factor for Alzheimer disease in both men and women, and in postmenopausal women the dementia risk associated with a longer reproductive period was most pronounced among APOE epsilon4 carriers.\",\"citations\":[{\"chunk_index\":2,\"quote\":\"TheAPOE\u22084 allele represents a major risk factor for AD in all ethnic groups studied, across all ages between 40 and 90 years, and in both men and women.\"},{\"chunk_index\":4,\"quote\":\"Risk of dementia associated with a longer reproductive period was most pronounced in APOE epsilon4 carriers\"}],\"abstained\":false}"
+      ],
+      "response": {
+        "schema_version": 1,
+        "query": "Claim: Female carriers of the Apolipoprotein E4 (APOE4) allele have increased risk for dementia.\nDo the contexts support or contradict this claim? Answer briefly, citing the evidence. If the contexts do not address the claim, abstain.",
+        "answer": "The contexts support the claim: APOE4 is described as a major risk factor for Alzheimer disease in both men and women, and in postmenopausal women the dementia risk associated with a longer reproductive period was most pronounced among APOE epsilon4 carriers.",
+        "citations": [
+          {
+            "doc_id": "e9915c7f0d65c956",
+            "chunk_id": "58fa2dc3f0c9f2ca",
+            "source": "scifact/51386222.txt",
+            "content_hash": "5a88cb422e25b54cd9a5e5c876cb2015fb19706a4c01d1e7eb570621baf2de55",
+            "heading_path": [],
+            "page": null,
+            "page_end": null,
+            "start_char": 1569,
+            "end_char": 1721,
+            "quote": "TheAPOE\u22084 allele represents a major risk factor for AD in all ethnic groups studied, across all ages between 40 and 90 years, and in both men and women."
+          },
+          {
+            "doc_id": "dcdab8e9be5c07ff",
+            "chunk_id": "0de21e1bde396721",
+            "source": "scifact/6309659.txt",
+            "content_hash": "07c7531604ea4f03e3a5bae605553c6080c4f68e0cf0cdd6dbf843732f256d93",
+            "heading_path": [],
+            "page": null,
+            "page_end": null,
+            "start_char": 2023,
+            "end_char": 2130,
+            "quote": "Risk of dementia associated with a longer reproductive period was most pronounced in APOE epsilon4 carriers"
+          }
+        ],
+        "generator": "openai",
+        "abstained": false,
+        "model_name": "cline-pass/deepseek-v4.1-flash"
+      },
+      "error": null,
+      "grade": {
+        "query_id": "415",
+        "kind": "answerable",
+        "parse_ok": true,
+        "abstained": false,
+        "n_raw_citations": 2,
+        "n_valid_citations": 2,
+        "n_valid_gold_citations": 1,
+        "final_citations_consistent": true,
+        "gold_doc_ids_in_context": [
+          "dcdab8e9be5c07ff"
+        ],
+        "cited_doc_ids": [
+          "dcdab8e9be5c07ff",
+          "e9915c7f0d65c956"
+        ],
+        "citation_recall": 1.0,
+        "citation_precision": 0.5,
+        "abstention_correct": true,
+        "error": null
+      }
+    },
+    {
+      "query_id": "517",
+      "kind": "answerable",
+      "question": "Claim: High levels of copeptin decrease risk of diabetes.\nDo the contexts support or contradict this claim? Answer briefly, citing the evidence. If the contexts do not address the claim, abstain.",
+      "contexts": [
+        {
+          "index": 0,
+          "doc_id": "48b298c04283e7ac",
+          "chunk_id": "731f4c01fdcb84ef",
+          "text_sha256": "dcedf4a7a8f400b0eaf6c7efbe86cc05ecfb551f6a1ca9d08a5c6beab908a2f5"
+        },
+        {
+          "index": 1,
+          "doc_id": "cfbb9698ca3e3d96",
+          "chunk_id": "35709e9f65bb760a",
+          "text_sha256": "05e2c90572b868e992dfe1210bfc36f04913f7c6e253b617526d85116e509cef"
+        },
+        {
+          "index": 2,
+          "doc_id": "b7c4165c7a93e1c2",
+          "chunk_id": "c657aeea400a8f90",
+          "text_sha256": "d20af92005f67b443ead7ae2d42b373b31a5c1786bc75bf7cac4b104a01fd2ee"
+        },
+        {
+          "index": 3,
+          "doc_id": "e5ba747e257c2b26",
+          "chunk_id": "82cfb385e44b7e22",
+          "text_sha256": "3588a32f474f68d8bcce3d40695df24376f3aa481440086eb322b3ca40d479e3"
+        },
+        {
+          "index": 4,
+          "doc_id": "feae213d188e7ca7",
+          "chunk_id": "acb3409af2d503b3",
+          "text_sha256": "05cebf74ee4338fafd87a1de9ac0120539d0c4e13d137647942ad439608e00e5"
+        }
+      ],
+      "gold_doc_ids": [
+        "5d60f0f4da925b02"
+      ],
+      "raw_contents": [
+        "{\"answer\": \"\", \"citations\": [], \"abstained\": true}"
+      ],
+      "response": {
+        "schema_version": 1,
+        "query": "Claim: High levels of copeptin decrease risk of diabetes.\nDo the contexts support or contradict this claim? Answer briefly, citing the evidence. If the contexts do not address the claim, abstain.",
+        "answer": "",
+        "citations": [],
+        "generator": "openai",
+        "abstained": true,
+        "model_name": "cline-pass/deepseek-v4.1-flash"
+      },
+      "error": null,
+      "grade": {
+        "query_id": "517",
+        "kind": "answerable",
+        "parse_ok": true,
+        "abstained": true,
+        "n_raw_citations": 0,
+        "n_valid_citations": 0,
+        "n_valid_gold_citations": 0,
+        "final_citations_consistent": null,
+        "gold_doc_ids_in_context": [],
+        "cited_doc_ids": [],
+        "citation_recall": null,
+        "citation_precision": null,
+        "abstention_correct": null,
+        "error": null
+      }
+    },
+    {
+      "query_id": "549",
+      "kind": "answerable",
+      "question": "Claim: IRG1 has antiviral effects against neurotropic viruses.\nDo the contexts support or contradict this claim? Answer briefly, citing the evidence. If the contexts do not address the claim, abstain.",
+      "contexts": [
+        {
+          "index": 0,
+          "doc_id": "9c407605492af730",
+          "chunk_id": "9366c50e21178f76",
+          "text_sha256": "23f87b774c98a9ced8f12de93df4d4814eca39b6153e16c9e5bfc532212b2d5b"
+        },
+        {
+          "index": 1,
+          "doc_id": "25ff0a5b3e7d6b3e",
+          "chunk_id": "efbf2c0d3c0b11b0",
+          "text_sha256": "65ae848739a59ce42a92e89ac8167d6b1fca3035a9dc7f52ab1b8cef005976a3"
+        },
+        {
+          "index": 2,
+          "doc_id": "8fb9433808b47664",
+          "chunk_id": "7e6e1065e544eaa6",
+          "text_sha256": "a92a338c2517e06eb36899cbdf268847a2e3c5668349425f7f6a3a2b879032c9"
+        },
+        {
+          "index": 3,
+          "doc_id": "e4503520a2b389ae",
+          "chunk_id": "0d34d3b483351d21",
+          "text_sha256": "f6ca13fd57e0dae1f53d775d4dcba70dc40ac790ac27ba85dac5f851f2410769"
+        },
+        {
+          "index": 4,
+          "doc_id": "bfdfc09d46661119",
+          "chunk_id": "f455eb8d32fe3c5c",
+          "text_sha256": "306fee12c887c9b13b9e6843ab05a0c9a8409b15077c4a353030f0ef18258b2a"
+        }
+      ],
+      "gold_doc_ids": [
+        "9c407605492af730"
+      ],
+      "raw_contents": [
+        "{\"answer\": \"The contexts support this claim: context [0] reports that Irg1 was among three interferon-stimulated genes identified as mediating antiviral effects against different neurotropic viruses in neurons.\", \"citations\": [{\"chunk_index\": 0, \"quote\": \"we identified three interferon-stimulated genes (ISGs; Ifi27, Irg1 and Rsad2 (also known as Viperin)) that mediated the antiviral effects against different neurotropic viruses\"}], \"abstained\": false}"
+      ],
+      "response": {
+        "schema_version": 1,
+        "query": "Claim: IRG1 has antiviral effects against neurotropic viruses.\nDo the contexts support or contradict this claim? Answer briefly, citing the evidence. If the contexts do not address the claim, abstain.",
+        "answer": "The contexts support this claim: context [0] reports that Irg1 was among three interferon-stimulated genes identified as mediating antiviral effects against different neurotropic viruses in neurons.",
+        "citations": [
+          {
+            "doc_id": "9c407605492af730",
+            "chunk_id": "9366c50e21178f76",
+            "source": "scifact/9433958.txt",
+            "content_hash": "23f87b774c98a9ced8f12de93df4d4814eca39b6153e16c9e5bfc532212b2d5b",
+            "heading_path": [],
+            "page": null,
+            "page_end": null,
+            "start_char": 797,
+            "end_char": 972,
+            "quote": "we identified three interferon-stimulated genes (ISGs; Ifi27, Irg1 and Rsad2 (also known as Viperin)) that mediated the antiviral effects against different neurotropic viruses"
+          }
+        ],
+        "generator": "openai",
+        "abstained": false,
+        "model_name": "cline-pass/deepseek-v4.1-flash"
+      },
+      "error": null,
+      "grade": {
+        "query_id": "549",
+        "kind": "answerable",
+        "parse_ok": true,
+        "abstained": false,
+        "n_raw_citations": 1,
+        "n_valid_citations": 1,
+        "n_valid_gold_citations": 1,
+        "final_citations_consistent": true,
+        "gold_doc_ids_in_context": [
+          "9c407605492af730"
+        ],
+        "cited_doc_ids": [
+          "9c407605492af730"
+        ],
+        "citation_recall": 1.0,
+        "citation_precision": 1.0,
+        "abstention_correct": true,
+        "error": null
+      }
+    },
+    {
+      "query_id": "578",
+      "kind": "answerable",
+      "question": "Claim: In mouse models, the loss of CSF1R facilitates MOZ-TIF2-induced leuekmogenesis.\nDo the contexts support or contradict this claim? Answer briefly, citing the evidence. If the contexts do not address the claim, abstain.",
+      "contexts": [
+        {
+          "index": 0,
+          "doc_id": "5dee258dc768cda5",
+          "chunk_id": "a365f1362029d6f5",
+          "text_sha256": "1817b69bce4fd66349754ce4d442ed04a227ba2c526d424fd9758144a5dc36e6"
+        },
+        {
+          "index": 1,
+          "doc_id": "3de07641ca903861",
+          "chunk_id": "a98d1b2ef319f85d",
+          "text_sha256": "98b364bd18da25e56cc6b9932d398d5302a73e6255d4b0c0a487a2280157a10c"
+        },
+        {
+          "index": 2,
+          "doc_id": "e171e3b8963733b8",
+          "chunk_id": "d1debe51f3b223e6",
+          "text_sha256": "c3aea877efd78149c114bf4376b1ef3c940ce53164253567e1db886128977050"
+        },
+        {
+          "index": 3,
+          "doc_id": "16ec19a4a78ca95b",
+          "chunk_id": "c85fde144ba526cf",
+          "text_sha256": "6c36de7966040b3be98bea9313e3774c8e237e941a6569fa98260c220cc8d077"
+        },
+        {
+          "index": 4,
+          "doc_id": "a5c96b098a13546f",
+          "chunk_id": "a78efb11e79209c7",
+          "text_sha256": "0562be30676fe5fd9d0b95d072d238c5587aa8e4653bc5902539835af13fb7b2"
+        }
+      ],
+      "gold_doc_ids": [
+        "5dee258dc768cda5"
+      ],
+      "raw_contents": [
+        "{\"answer\": \"The contexts contradict this claim. Context [0] reports that induction of AML was suppressed in CSF1R-deficient mice and that CSF1R inhibitors slowed the progression of MOZ-TIF2-induced leukemia, indicating that loss of CSF1R impairs rather than facilitates leukemogenesis. Thus, CSF1R is required for MOZ-TIF2-driven AML rather than restraining it.\", \"citations\": [{\"chunk_index\": 0, \"quote\": \"Moreover, induction of AML was suppressed in CSF1R-deficient mice and CSF1R inhibitors slowed the progression of MOZ-TIF2\u2013induced leukemia.\"}], \"abstained\": false}"
+      ],
+      "response": {
+        "schema_version": 1,
+        "query": "Claim: In mouse models, the loss of CSF1R facilitates MOZ-TIF2-induced leuekmogenesis.\nDo the contexts support or contradict this claim? Answer briefly, citing the evidence. If the contexts do not address the claim, abstain.",
+        "answer": "The contexts contradict this claim. Context [0] reports that induction of AML was suppressed in CSF1R-deficient mice and that CSF1R inhibitors slowed the progression of MOZ-TIF2-induced leukemia, indicating that loss of CSF1R impairs rather than facilitates leukemogenesis. Thus, CSF1R is required for MOZ-TIF2-driven AML rather than restraining it.",
+        "citations": [
+          {
+            "doc_id": "5dee258dc768cda5",
+            "chunk_id": "a365f1362029d6f5",
+            "source": "scifact/8764879.txt",
+            "content_hash": "1817b69bce4fd66349754ce4d442ed04a227ba2c526d424fd9758144a5dc36e6",
+            "heading_path": [],
+            "page": null,
+            "page_end": null,
+            "start_char": 1154,
+            "end_char": 1293,
+            "quote": "Moreover, induction of AML was suppressed in CSF1R-deficient mice and CSF1R inhibitors slowed the progression of MOZ-TIF2\u2013induced leukemia."
+          }
+        ],
+        "generator": "openai",
+        "abstained": false,
+        "model_name": "cline-pass/deepseek-v4.1-flash"
+      },
+      "error": null,
+      "grade": {
+        "query_id": "578",
+        "kind": "answerable",
+        "parse_ok": true,
+        "abstained": false,
+        "n_raw_citations": 1,
+        "n_valid_citations": 1,
+        "n_valid_gold_citations": 1,
+        "final_citations_consistent": true,
+        "gold_doc_ids_in_context": [
+          "5dee258dc768cda5"
+        ],
+        "cited_doc_ids": [
+          "5dee258dc768cda5"
+        ],
+        "citation_recall": 1.0,
+        "citation_precision": 1.0,
+        "abstention_correct": true,
+        "error": null
+      }
+    },
+    {
+      "query_id": "623",
+      "kind": "answerable",
+      "question": "Claim: Individuals with low serum vitamin D concentrations have increased risk of multiple sclerosis.\nDo the contexts support or contradict this claim? Answer briefly, citing the evidence. If the contexts do not address the claim, abstain.",
+      "contexts": [
+        {
+          "index": 0,
+          "doc_id": "c951aa039ef4f166",
+          "chunk_id": "99ea83d79a885f28",
+          "text_sha256": "9039d42abcc27632ef3a45e973af445362268adb837b07905a56107895dccd4f"
+        },
+        {
+          "index": 1,
+          "doc_id": "62f02eac123a3762",
+          "chunk_id": "5193b9f59ee7fb31",
+          "text_sha256": "7bcb1d24fa9ba0bf9f5dc5e9687c76c672fbb380e25dcd74fb49c32266399b46"
+        },
+        {
+          "index": 2,
+          "doc_id": "47935887042ccfb5",
+          "chunk_id": "c98b7593e2cce3dd",
+          "text_sha256": "32a7bfe2133fb2d3dec13d5b535f1c53f716f437f892cd0352f4ea4ca5191f1b"
+        },
+        {
+          "index": 3,
+          "doc_id": "437f33126f26c292",
+          "chunk_id": "7b481decba95cde3",
+          "text_sha256": "94b88a8eb4fcfa367dbb2da81c5427c2a699ab6ae8e378ac009f076fbc67f684"
+        },
+        {
+          "index": 4,
+          "doc_id": "c5b776bd6d60b490",
+          "chunk_id": "3d92d457ac44ca60",
+          "text_sha256": "a885ac82bf1b174db614bd1e03be7afd9bfc15820bf017a95f5cd3722890dd0e"
+        }
+      ],
+      "gold_doc_ids": [
+        "5d86a4c6d0e45cac"
+      ],
+      "raw_contents": [
+        "{\"answer\": \"The contexts support the claim. Context [1] identifies vitamin D as a potential factor in multiple sclerosis due to latitude-related UV light decreases and notes its immunomodulatory functions and suppression of an animal model of MS.\", \"citations\": [{\"chunk_index\": 1, \"quote\": \"One of the potential factors related to the difference of the prevalence is vitamin D, because the strength of ambient ultraviolet light, which is essential for vitamin D production, decreases with increasing latitude. It is known that vitamin D has immunomodulatory functions and suppresses an animal model of MS.\"}], \"abstained\": false}"
+      ],
+      "response": {
+        "schema_version": 1,
+        "query": "Claim: Individuals with low serum vitamin D concentrations have increased risk of multiple sclerosis.\nDo the contexts support or contradict this claim? Answer briefly, citing the evidence. If the contexts do not address the claim, abstain.",
+        "answer": "The contexts support the claim. Context [1] identifies vitamin D as a potential factor in multiple sclerosis due to latitude-related UV light decreases and notes its immunomodulatory functions and suppression of an animal model of MS.",
+        "citations": [
+          {
+            "doc_id": "62f02eac123a3762",
+            "chunk_id": "5193b9f59ee7fb31",
+            "source": "scifact/22843838.txt",
+            "content_hash": "7bcb1d24fa9ba0bf9f5dc5e9687c76c672fbb380e25dcd74fb49c32266399b46",
+            "heading_path": [],
+            "page": null,
+            "page_end": null,
+            "start_char": 207,
+            "end_char": 521,
+            "quote": "One of the potential factors related to the difference of the prevalence is vitamin D, because the strength of ambient ultraviolet light, which is essential for vitamin D production, decreases with increasing latitude. It is known that vitamin D has immunomodulatory functions and suppresses an animal model of MS."
+          }
+        ],
+        "generator": "openai",
+        "abstained": false,
+        "model_name": "cline-pass/deepseek-v4.1-flash"
+      },
+      "error": null,
+      "grade": {
+        "query_id": "623",
+        "kind": "answerable",
+        "parse_ok": true,
+        "abstained": false,
+        "n_raw_citations": 1,
+        "n_valid_citations": 1,
+        "n_valid_gold_citations": 0,
+        "final_citations_consistent": true,
+        "gold_doc_ids_in_context": [],
+        "cited_doc_ids": [
+          "62f02eac123a3762"
+        ],
+        "citation_recall": null,
+        "citation_precision": 0.0,
+        "abstention_correct": null,
+        "error": null
+      }
+    },
+    {
+      "query_id": "744",
+      "kind": "answerable",
+      "question": "Claim: Macropinocytosis contributes to a cell's supply of amino acids via the intracellular uptake of protein.\nDo the contexts support or contradict this claim? Answer briefly, citing the evidence. If the contexts do not address the claim, abstain.",
+      "contexts": [
+        {
+          "index": 0,
+          "doc_id": "01a1c9b2a8ca60d0",
+          "chunk_id": "fbe89ebb11ef1f00",
+          "text_sha256": "02eab61b9ec1b56f1442856e1d155605f2a3ee3ae424f9a07440b781fa4013e0"
+        },
+        {
+          "index": 1,
+          "doc_id": "e9af3b0ffd997c28",
+          "chunk_id": "7ec2f98475705230",
+          "text_sha256": "9d1a057c56af5ff58652dafd281ac5907e99312b51f4da99bd34b21656156d9a"
+        },
+        {
+          "index": 2,
+          "doc_id": "91c5f1376f14cd43",
+          "chunk_id": "1ac69933471f59de",
+          "text_sha256": "bde109a5ac8c35b0e5471cd9cb73f060d98c55faee98acb896df8846fc8eb3b2"
+        },
+        {
+          "index": 3,
+          "doc_id": "c8c42a0877420331",
+          "chunk_id": "159b9bf336495871",
+          "text_sha256": "35726d505d955ff9ccbb7106204ae80e596a4ddaf528e6df173583c5cf9edda4"
+        },
+        {
+          "index": 4,
+          "doc_id": "b59e5b03c08cbc48",
+          "chunk_id": "1fefb7d0c9f13036",
+          "text_sha256": "dbfbc30311d640845308d852177a0781dfc5d66cd3f663df056fa279ade82cd1"
+        }
+      ],
+      "gold_doc_ids": [
+        "e9af3b0ffd997c28"
+      ],
+      "raw_contents": [
+        "{\"answer\": \"The contexts support the claim: Ras-transformed cells use macropinocytosis to internalize extracellular protein, which is then degraded to yield amino acids, and protein macropinocytosis can serve as an essential amino acid source. Thus macropinocytosis contributes to a cell's amino acid supply via protein uptake.\", \"citations\": [{\"chunk_index\": 0, \"quote\": \"Ras-transformed cells use macropinocytosis to transport extracellular protein into the cell. The internalized protein undergoes proteolytic degradation, yielding amino acids including glutamine that can enter central carbon metabolism.\"}, {\"chunk_index\": 1, \"quote\": \"Here, we demonstrate that protein macropinocytosis can also serve as an essential amino acid source.\"}], \"abstained\": false}"
+      ],
+      "response": {
+        "schema_version": 1,
+        "query": "Claim: Macropinocytosis contributes to a cell's supply of amino acids via the intracellular uptake of protein.\nDo the contexts support or contradict this claim? Answer briefly, citing the evidence. If the contexts do not address the claim, abstain.",
+        "answer": "The contexts support the claim: Ras-transformed cells use macropinocytosis to internalize extracellular protein, which is then degraded to yield amino acids, and protein macropinocytosis can serve as an essential amino acid source. Thus macropinocytosis contributes to a cell's amino acid supply via protein uptake.",
+        "citations": [
+          {
+            "doc_id": "01a1c9b2a8ca60d0",
+            "chunk_id": "fbe89ebb11ef1f00",
+            "source": "scifact/4138659.txt",
+            "content_hash": "02eab61b9ec1b56f1442856e1d155605f2a3ee3ae424f9a07440b781fa4013e0",
+            "heading_path": [],
+            "page": null,
+            "page_end": null,
+            "start_char": 468,
+            "end_char": 703,
+            "quote": "Ras-transformed cells use macropinocytosis to transport extracellular protein into the cell. The internalized protein undergoes proteolytic degradation, yielding amino acids including glutamine that can enter central carbon metabolism."
+          },
+          {
+            "doc_id": "e9af3b0ffd997c28",
+            "chunk_id": "7ec2f98475705230",
+            "source": "scifact/8460275.txt",
+            "content_hash": "9d1a057c56af5ff58652dafd281ac5907e99312b51f4da99bd34b21656156d9a",
+            "heading_path": [],
+            "page": null,
+            "page_end": null,
+            "start_char": 344,
+            "end_char": 444,
+            "quote": "Here, we demonstrate that protein macropinocytosis can also serve as an essential amino acid source."
+          }
+        ],
+        "generator": "openai",
+        "abstained": false,
+        "model_name": "cline-pass/deepseek-v4.1-flash"
+      },
+      "error": null,
+      "grade": {
+        "query_id": "744",
+        "kind": "answerable",
+        "parse_ok": true,
+        "abstained": false,
+        "n_raw_citations": 2,
+        "n_valid_citations": 2,
+        "n_valid_gold_citations": 1,
+        "final_citations_consistent": true,
+        "gold_doc_ids_in_context": [
+          "e9af3b0ffd997c28"
+        ],
+        "cited_doc_ids": [
+          "01a1c9b2a8ca60d0",
+          "e9af3b0ffd997c28"
+        ],
+        "citation_recall": 1.0,
+        "citation_precision": 0.5,
+        "abstention_correct": true,
+        "error": null
+      }
+    },
+    {
+      "query_id": "768",
+      "kind": "answerable",
+      "question": "Claim: Mercaptopurine is anabolized into the inactive methylmercaptopurine by thiopurine methyltrasnferase (TPMT).\nDo the contexts support or contradict this claim? Answer briefly, citing the evidence. If the contexts do not address the claim, abstain.",
+      "contexts": [
+        {
+          "index": 0,
+          "doc_id": "5b4b17c927f49bfb",
+          "chunk_id": "045c221061b1bd45",
+          "text_sha256": "49c8b82d3f66a376e1aebcd89ad20c3e01ee23ac43c2d2084db8057b9e82d648"
+        },
+        {
+          "index": 1,
+          "doc_id": "5ef2cc1df6ce2b11",
+          "chunk_id": "9efb26182eef5997",
+          "text_sha256": "b669efd17c2586b178d653bb6fa85471d34bbfd2888c926d85d5b9c05cfe0f30"
+        },
+        {
+          "index": 2,
+          "doc_id": "8678a820885a1a73",
+          "chunk_id": "16e1c65db77de4ff",
+          "text_sha256": "916359b1c193c3b91cab58b4d63212218f7c97a82e5d0a7ff017791347816b8e"
+        },
+        {
+          "index": 3,
+          "doc_id": "465bbf16fdfa6ee2",
+          "chunk_id": "0ad93e7d0e1f7110",
+          "text_sha256": "97b07190d3c55852f21af610ca722ac408ea6696f93b041780840c1407c652cd"
+        },
+        {
+          "index": 4,
+          "doc_id": "6a82881024e4ed1e",
+          "chunk_id": "a74c15fafbc47470",
+          "text_sha256": "f7ccdd2b39cfa88a6e66feadcf16c13a1c15c621779b13876558a823baa7f374"
+        }
+      ],
+      "gold_doc_ids": [
+        "8678a820885a1a73"
+      ],
+      "raw_contents": [
+        "{\"answer\": \"The contexts are consistent with, but do not explicitly state, this claim: context [1] links thiopurine methyltransferase (TPMT) activity to 6-mercaptopurine (6MP) therapy, reporting that lower TPMT activity tended to associate with better outcome, which is consistent with TPMT inactivating 6MP. No context, however, names methylmercaptopurine or describes the methylation reaction itself.\", \"citations\": [{\"chunk_index\": 1, \"quote\": \"with lower TPMT activity (P =.096) tending to associate with better outcome\"}], \"abstained\": false}"
+      ],
+      "response": {
+        "schema_version": 1,
+        "query": "Claim: Mercaptopurine is anabolized into the inactive methylmercaptopurine by thiopurine methyltrasnferase (TPMT).\nDo the contexts support or contradict this claim? Answer briefly, citing the evidence. If the contexts do not address the claim, abstain.",
+        "answer": "The contexts are consistent with, but do not explicitly state, this claim: context [1] links thiopurine methyltransferase (TPMT) activity to 6-mercaptopurine (6MP) therapy, reporting that lower TPMT activity tended to associate with better outcome, which is consistent with TPMT inactivating 6MP. No context, however, names methylmercaptopurine or describes the methylation reaction itself.",
+        "citations": [
+          {
+            "doc_id": "5ef2cc1df6ce2b11",
+            "chunk_id": "9efb26182eef5997",
+            "source": "scifact/1373287.txt",
+            "content_hash": "b669efd17c2586b178d653bb6fa85471d34bbfd2888c926d85d5b9c05cfe0f30",
+            "heading_path": [],
+            "page": null,
+            "page_end": null,
+            "start_char": 1600,
+            "end_char": 1675,
+            "quote": "with lower TPMT activity (P =.096) tending to associate with better outcome"
+          }
+        ],
+        "generator": "openai",
+        "abstained": false,
+        "model_name": "cline-pass/deepseek-v4.1-flash"
+      },
+      "error": null,
+      "grade": {
+        "query_id": "768",
+        "kind": "answerable",
+        "parse_ok": true,
+        "abstained": false,
+        "n_raw_citations": 1,
+        "n_valid_citations": 1,
+        "n_valid_gold_citations": 0,
+        "final_citations_consistent": true,
+        "gold_doc_ids_in_context": [
+          "8678a820885a1a73"
+        ],
+        "cited_doc_ids": [
+          "5ef2cc1df6ce2b11"
+        ],
+        "citation_recall": 0.0,
+        "citation_precision": 0.0,
+        "abstention_correct": true,
+        "error": null
+      }
+    },
+    {
+      "query_id": "808",
+      "kind": "answerable",
+      "question": "Claim: Most termination events in Okazaki fragments are sequence specific.\nDo the contexts support or contradict this claim? Answer briefly, citing the evidence. If the contexts do not address the claim, abstain.",
+      "contexts": [
+        {
+          "index": 0,
+          "doc_id": "10b18ae3b7b78a32",
+          "chunk_id": "f84dc1c95309fcf7",
+          "text_sha256": "96b157e2aa5547d66fbc1a5c8ed02b880b4969892d95ed97b541302be5de3e7a"
+        },
+        {
+          "index": 1,
+          "doc_id": "0b50e821ead40941",
+          "chunk_id": "4695f70e6c9e1c91",
+          "text_sha256": "7cc2a51846833b31411db15c0d7648b6b485045df8b5845385517bbeacd24cc9"
+        },
+        {
+          "index": 2,
+          "doc_id": "9c9138e38d979f67",
+          "chunk_id": "fe8a960206b6987f",
+          "text_sha256": "16968a976159368217fbaa1519f905125e150216b47a783adb8c16112e9c2110"
+        },
+        {
+          "index": 3,
+          "doc_id": "707e854ae9e7fab5",
+          "chunk_id": "a9fc0c12225b85c7",
+          "text_sha256": "8cd6d60462c531e382c8fbf23d4b903809cf28b45c2dfbd5f4c84bd507eb1d08"
+        },
+        {
+          "index": 4,
+          "doc_id": "2071b3fd6bc893f4",
+          "chunk_id": "7fdea5ea28b9c1c1",
+          "text_sha256": "fcfeb2f6ea389dd58f96c7fee5a4aaeed22661b576ccef3c8bb5dce6461e80e2"
+        }
+      ],
+      "gold_doc_ids": [
+        "10b18ae3b7b78a32"
+      ],
+      "raw_contents": [
+        "{\"answer\": \"The contexts contradict the claim: genome-wide analysis of Okazaki fragments shows replication termination is largely passive and does not rely on cis-acting sequences, while sequence-specific control is reported only for rDNA Ter sites, not most termination events.\", \"citations\": [{\"chunk_index\": 0, \"quote\": \"we show that replication termination is a largely passive phenomenon that does not rely on cis-acting sequences or replication fork pausing.\"}, {\"chunk_index\": 4, \"quote\": \"Termination of replication forks at the natural termini of the rDNA of Saccharomyces cerevisiae is controlled in a sequence-specific and polar mode by the interaction of the Fob1p replication terminator protein with the tandem Ter sites located in the nontranscribed spacers.\"}], \"abstained\": false}"
+      ],
+      "response": {
+        "schema_version": 1,
+        "query": "Claim: Most termination events in Okazaki fragments are sequence specific.\nDo the contexts support or contradict this claim? Answer briefly, citing the evidence. If the contexts do not address the claim, abstain.",
+        "answer": "The contexts contradict the claim: genome-wide analysis of Okazaki fragments shows replication termination is largely passive and does not rely on cis-acting sequences, while sequence-specific control is reported only for rDNA Ter sites, not most termination events.",
+        "citations": [
+          {
+            "doc_id": "10b18ae3b7b78a32",
+            "chunk_id": "f84dc1c95309fcf7",
+            "source": "scifact/36606083.txt",
+            "content_hash": "96b157e2aa5547d66fbc1a5c8ed02b880b4969892d95ed97b541302be5de3e7a",
+            "heading_path": [],
+            "page": null,
+            "page_end": null,
+            "start_char": 759,
+            "end_char": 899,
+            "quote": "we show that replication termination is a largely passive phenomenon that does not rely on cis-acting sequences or replication fork pausing."
+          },
+          {
+            "doc_id": "2071b3fd6bc893f4",
+            "chunk_id": "7fdea5ea28b9c1c1",
+            "source": "scifact/23664875.txt",
+            "content_hash": "fcfeb2f6ea389dd58f96c7fee5a4aaeed22661b576ccef3c8bb5dce6461e80e2",
+            "heading_path": [],
+            "page": null,
+            "page_end": null,
+            "start_char": 128,
+            "end_char": 403,
+            "quote": "Termination of replication forks at the natural termini of the rDNA of Saccharomyces cerevisiae is controlled in a sequence-specific and polar mode by the interaction of the Fob1p replication terminator protein with the tandem Ter sites located in the nontranscribed spacers."
+          }
+        ],
+        "generator": "openai",
+        "abstained": false,
+        "model_name": "cline-pass/deepseek-v4.1-flash"
+      },
+      "error": null,
+      "grade": {
+        "query_id": "808",
+        "kind": "answerable",
+        "parse_ok": true,
+        "abstained": false,
+        "n_raw_citations": 2,
+        "n_valid_citations": 2,
+        "n_valid_gold_citations": 1,
+        "final_citations_consistent": true,
+        "gold_doc_ids_in_context": [
+          "10b18ae3b7b78a32"
+        ],
+        "cited_doc_ids": [
+          "10b18ae3b7b78a32",
+          "2071b3fd6bc893f4"
+        ],
+        "citation_recall": 1.0,
+        "citation_precision": 0.5,
+        "abstention_correct": true,
+        "error": null
+      }
+    },
+    {
+      "query_id": "820",
+      "kind": "answerable",
+      "question": "Claim: N-terminal cleavage increases success identifying transcription start sites.\nDo the contexts support or contradict this claim? Answer briefly, citing the evidence. If the contexts do not address the claim, abstain.",
+      "contexts": [
+        {
+          "index": 0,
+          "doc_id": "ea4fcca2fc105479",
+          "chunk_id": "d2b96dc1ee0a0137",
+          "text_sha256": "d294c01628d2b580ad6cce712e5ebf716f6ce40928a8ba09965c05abd18b01df"
+        },
+        {
+          "index": 1,
+          "doc_id": "36038df18c7b3919",
+          "chunk_id": "3e8c11127d150658",
+          "text_sha256": "63b82ab952b6e9a55677403b43cd3901f55aeda5ffacc7ec741f79eff13f9c5f"
+        },
+        {
+          "index": 2,
+          "doc_id": "cdb9442e932a4eec",
+          "chunk_id": "fccba18b975f4861",
+          "text_sha256": "2b4e5ffa04f5bb342f9afbf256f33008d8d73999c301aa7ebdaa7a1efa4331e2"
+        },
+        {
+          "index": 3,
+          "doc_id": "27c934bc2a45b23e",
+          "chunk_id": "df942aa860f07029",
+          "text_sha256": "eaa357bb678cc05149b2e2988eb2d1a23ef3d2842ca3c373a6b78a11d8fed7b8"
+        },
+        {
+          "index": 4,
+          "doc_id": "5eb613c6b4fb26b3",
+          "chunk_id": "9986224eb99e4657",
+          "text_sha256": "b4666be003f68b1c0efb999bc705feac22e0377998fcb7fd986750148469f1c5"
+        }
+      ],
+      "gold_doc_ids": [
+        "5eb613c6b4fb26b3"
+      ],
+      "raw_contents": [
+        "{\"answer\":\"\",\"citations\":[],\"abstained\":true}"
+      ],
+      "response": {
+        "schema_version": 1,
+        "query": "Claim: N-terminal cleavage increases success identifying transcription start sites.\nDo the contexts support or contradict this claim? Answer briefly, citing the evidence. If the contexts do not address the claim, abstain.",
+        "answer": "",
+        "citations": [],
+        "generator": "openai",
+        "abstained": true,
+        "model_name": "cline-pass/deepseek-v4.1-flash"
+      },
+      "error": null,
+      "grade": {
+        "query_id": "820",
+        "kind": "answerable",
+        "parse_ok": true,
+        "abstained": true,
+        "n_raw_citations": 0,
+        "n_valid_citations": 0,
+        "n_valid_gold_citations": 0,
+        "final_citations_consistent": null,
+        "gold_doc_ids_in_context": [
+          "5eb613c6b4fb26b3"
+        ],
+        "cited_doc_ids": [],
+        "citation_recall": 0.0,
+        "citation_precision": null,
+        "abstention_correct": false,
+        "error": null
+      }
+    },
+    {
+      "query_id": "852",
+      "kind": "answerable",
+      "question": "Claim: Non-invasive ventilation use should be decreased if there is inadequate response to conventional treatment.\nDo the contexts support or contradict this claim? Answer briefly, citing the evidence. If the contexts do not address the claim, abstain.",
+      "contexts": [
+        {
+          "index": 0,
+          "doc_id": "19ef3cfe0e4df7a0",
+          "chunk_id": "226895dda0a61577",
+          "text_sha256": "34462064243295ed46a5bbf286eaa6cfa268bce6795896d9863794fd39523309"
+        },
+        {
+          "index": 1,
+          "doc_id": "4e295fe74ff6d76f",
+          "chunk_id": "1f00abc4dea2cf39",
+          "text_sha256": "1db3a30e6e5d9d11ade8371985187fefeb794f4eeb501cc302e8d6577610212d"
+        },
+        {
+          "index": 2,
+          "doc_id": "1caff6ba00882b30",
+          "chunk_id": "2634a1282acc8f5d",
+          "text_sha256": "d4d13064abb0e45d894963fb6592123cddb8aebc9cdb543ae73cf68a599d3ff5"
+        },
+        {
+          "index": 3,
+          "doc_id": "f08cfad92a0b2955",
+          "chunk_id": "a7b9eab22685828a",
+          "text_sha256": "5c7cd12bf72ec4cee1bc14c7a2475521edfd3444c656c13c292811e91f520018"
+        },
+        {
+          "index": 4,
+          "doc_id": "11f7c6c2d4fb1972",
+          "chunk_id": "102b7c1fb7aadc16",
+          "text_sha256": "7876700244404d99a385a5a43ea8bd05a91ff48cdaaba08712f56594f41ec0e1"
+        }
+      ],
+      "gold_doc_ids": [
+        "19ef3cfe0e4df7a0"
+      ],
+      "raw_contents": [
+        "{\"answer\": \"\", \"citations\": [], \"abstained\": true}"
+      ],
+      "response": {
+        "schema_version": 1,
+        "query": "Claim: Non-invasive ventilation use should be decreased if there is inadequate response to conventional treatment.\nDo the contexts support or contradict this claim? Answer briefly, citing the evidence. If the contexts do not address the claim, abstain.",
+        "answer": "",
+        "citations": [],
+        "generator": "openai",
+        "abstained": true,
+        "model_name": "cline-pass/deepseek-v4.1-flash"
+      },
+      "error": null,
+      "grade": {
+        "query_id": "852",
+        "kind": "answerable",
+        "parse_ok": true,
+        "abstained": true,
+        "n_raw_citations": 0,
+        "n_valid_citations": 0,
+        "n_valid_gold_citations": 0,
+        "final_citations_consistent": null,
+        "gold_doc_ids_in_context": [
+          "19ef3cfe0e4df7a0"
+        ],
+        "cited_doc_ids": [],
+        "citation_recall": 0.0,
+        "citation_precision": null,
+        "abstention_correct": false,
+        "error": null
+      }
+    },
+    {
+      "query_id": "99",
+      "kind": "answerable",
+      "question": "Claim: Alizarin forms hydrogen bonds with residues involved in PGAM1 substrate binding.\nDo the contexts support or contradict this claim? Answer briefly, citing the evidence. If the contexts do not address the claim, abstain.",
+      "contexts": [
+        {
+          "index": 0,
+          "doc_id": "f90266dd5952043f",
+          "chunk_id": "1b2c036ad565f786",
+          "text_sha256": "6c86b4ae2c949a94e8e66a4fba0c0e19f25c75a4df56b4b3610ada3a88ad78cd"
+        },
+        {
+          "index": 1,
+          "doc_id": "04fef83e6973629a",
+          "chunk_id": "98c490497be1188f",
+          "text_sha256": "98c49e63f8aa442c7b9eb7cc2b1e4be83338f5643ac5587d2ae627b7a555b70c"
+        },
+        {
+          "index": 2,
+          "doc_id": "8cf1f98fb8ce4f81",
+          "chunk_id": "f5a366cac6102674",
+          "text_sha256": "03d10e94d5584f1d2ba14053a1b33cd8491490d8be3aea899566e562e511ac12"
+        },
+        {
+          "index": 3,
+          "doc_id": "32a35e4982a9f269",
+          "chunk_id": "f11876bf0b520abf",
+          "text_sha256": "74547ea5dba7716103fe3bb6273c432da6f3fb67ea37940b72d5df0efe9e48f6"
+        },
+        {
+          "index": 4,
+          "doc_id": "9495f685eb15261c",
+          "chunk_id": "d1b05bb19cf58dd6",
+          "text_sha256": "8d828441f68a30fe1909b448c20ad576e4c2c2ea71614575efa7e412fdeb226b"
+        }
+      ],
+      "gold_doc_ids": [
+        "f90266dd5952043f"
+      ],
+      "raw_contents": [
+        "{\"answer\": \"\", \"citations\": [], \"abstained\": true}"
+      ],
+      "response": {
+        "schema_version": 1,
+        "query": "Claim: Alizarin forms hydrogen bonds with residues involved in PGAM1 substrate binding.\nDo the contexts support or contradict this claim? Answer briefly, citing the evidence. If the contexts do not address the claim, abstain.",
+        "answer": "",
+        "citations": [],
+        "generator": "openai",
+        "abstained": true,
+        "model_name": "cline-pass/deepseek-v4.1-flash"
+      },
+      "error": null,
+      "grade": {
+        "query_id": "99",
+        "kind": "answerable",
+        "parse_ok": true,
+        "abstained": true,
+        "n_raw_citations": 0,
+        "n_valid_citations": 0,
+        "n_valid_gold_citations": 0,
+        "final_citations_consistent": null,
+        "gold_doc_ids_in_context": [
+          "f90266dd5952043f"
+        ],
+        "cited_doc_ids": [],
+        "citation_recall": 0.0,
+        "citation_precision": null,
+        "abstention_correct": false,
+        "error": null
+      }
+    },
+    {
+      "query_id": "118",
+      "kind": "no_relevant",
+      "question": "Claim: Antibiotic induced alterations in the gut microbiome reduce resistance against Clostridium difficile\nDo the contexts support or contradict this claim? Answer briefly, citing the evidence. If the contexts do not address the claim, abstain.",
+      "contexts": [
+        {
+          "index": 0,
+          "doc_id": "061ffc1ab3d36cac",
+          "chunk_id": "f34c862690019889",
+          "text_sha256": "2eff73a49031759b1c09c6aba868593210e71001725748431d4c2049effee78f"
+        },
+        {
+          "index": 1,
+          "doc_id": "4c02b754529dc1a7",
+          "chunk_id": "f6c8546d1d1cd01b",
+          "text_sha256": "0add7400f15ecaed48463d59b2a655dbeada28585ee630a59c975900b002b998"
+        },
+        {
+          "index": 2,
+          "doc_id": "d401d7ba7abd7756",
+          "chunk_id": "73cec81df4bd8454",
+          "text_sha256": "d991875f4e48cb1e01c55749d116ef194a7fd6794ad32c1a1161ed864e806131"
+        },
+        {
+          "index": 3,
+          "doc_id": "4bc23535ad3b29eb",
+          "chunk_id": "a94e3baec3aeec82",
+          "text_sha256": "ce899409fbeb5f5219db0e87b1b027241e35826f1e6e2d1ba4bc39b7d7a9a0dc"
+        },
+        {
+          "index": 4,
+          "doc_id": "99a7e607200eb03d",
+          "chunk_id": "9b1a223802706623",
+          "text_sha256": "29b55c49e07ec20ae26a127b96cde730e62f93b8751caf43bec081aa53c069b7"
+        }
+      ],
+      "gold_doc_ids": [
+        "6dac5ffd4876d70b"
+      ],
+      "raw_contents": [
+        "{\"answer\": \"The contexts support this claim. Context [0] states that many antibiotics destroy intestinal microbial communities and increase susceptibility to intestinal pathogens, citing Clostridium difficile as a major cause of antibiotic-induced diarrhoea, and describes loss of specific bacterial taxa correlating with development of infection after antibiotic treatment in mice.\", \"citations\": [{\"chunk_index\": 0, \"quote\": \"Many antibiotics destroy intestinal microbial communities and increase susceptibility to intestinal pathogens. Among these, Clostridium difficile, a major cause of antibiotic-induced diarrhoea, greatly increases morbidity and mortality in hospitalized patients.\"}, {\"chunk_index\": 0, \"quote\": \"Here we correlate loss of specific bacterial taxa with development of infection, by treating mice with different antibiotics that result in distinct microbiota changes and lead to varied susceptibility to C. difficile.\"}], \"abstained\": false}"
+      ],
+      "response": {
+        "schema_version": 1,
+        "query": "Claim: Antibiotic induced alterations in the gut microbiome reduce resistance against Clostridium difficile\nDo the contexts support or contradict this claim? Answer briefly, citing the evidence. If the contexts do not address the claim, abstain.",
+        "answer": "The contexts support this claim. Context [0] states that many antibiotics destroy intestinal microbial communities and increase susceptibility to intestinal pathogens, citing Clostridium difficile as a major cause of antibiotic-induced diarrhoea, and describes loss of specific bacterial taxa correlating with development of infection after antibiotic treatment in mice.",
+        "citations": [
+          {
+            "doc_id": "061ffc1ab3d36cac",
+            "chunk_id": "f34c862690019889",
+            "source": "scifact/4465735.txt",
+            "content_hash": "2eff73a49031759b1c09c6aba868593210e71001725748431d4c2049effee78f",
+            "heading_path": [],
+            "page": null,
+            "page_end": null,
+            "start_char": 278,
+            "end_char": 539,
+            "quote": "Many antibiotics destroy intestinal microbial communities and increase susceptibility to intestinal pathogens. Among these, Clostridium difficile, a major cause of antibiotic-induced diarrhoea, greatly increases morbidity and mortality in hospitalized patients."
+          },
+          {
+            "doc_id": "061ffc1ab3d36cac",
+            "chunk_id": "f34c862690019889",
+            "source": "scifact/4465735.txt",
+            "content_hash": "2eff73a49031759b1c09c6aba868593210e71001725748431d4c2049effee78f",
+            "heading_path": [],
+            "page": null,
+            "page_end": null,
+            "start_char": 667,
+            "end_char": 885,
+            "quote": "Here we correlate loss of specific bacterial taxa with development of infection, by treating mice with different antibiotics that result in distinct microbiota changes and lead to varied susceptibility to C. difficile."
+          }
+        ],
+        "generator": "openai",
+        "abstained": false,
+        "model_name": "cline-pass/deepseek-v4.1-flash"
+      },
+      "error": null,
+      "grade": {
+        "query_id": "118",
+        "kind": "no_relevant",
+        "parse_ok": true,
+        "abstained": false,
+        "n_raw_citations": 2,
+        "n_valid_citations": 2,
+        "n_valid_gold_citations": 0,
+        "final_citations_consistent": true,
+        "gold_doc_ids_in_context": [],
+        "cited_doc_ids": [
+          "061ffc1ab3d36cac"
+        ],
+        "citation_recall": null,
+        "citation_precision": 0.0,
+        "abstention_correct": false,
+        "error": null
+      }
+    },
+    {
+      "query_id": "1226",
+      "kind": "no_relevant",
+      "question": "Claim: The loss of the TET protein functions may have dire biological consequences, such as myeloid cancers.\nDo the contexts support or contradict this claim? Answer briefly, citing the evidence. If the contexts do not address the claim, abstain.",
+      "contexts": [
+        {
+          "index": 0,
+          "doc_id": "3e4b130d821d6a82",
+          "chunk_id": "bb3b92f0c99cad53",
+          "text_sha256": "eee5b8e3fc5c151d64f488936848862c531ebdd3f0778f167c646aa21f0a815f"
+        },
+        {
+          "index": 1,
+          "doc_id": "2a2382e7be348859",
+          "chunk_id": "ff9f9522d8cab35a",
+          "text_sha256": "0d53c4d508b017c21c05a686e9692f7fb3f9b28a99af9b4894799b9144b57685"
+        },
+        {
+          "index": 2,
+          "doc_id": "23cf6dda077c4772",
+          "chunk_id": "70abb9affa512c02",
+          "text_sha256": "594e5bdeac69680a600e38789791742c31f950e6e339fccdc67cea7b33690e9d"
+        },
+        {
+          "index": 3,
+          "doc_id": "8d6dab723d77ceed",
+          "chunk_id": "0af15fa012627ccb",
+          "text_sha256": "9b75305ea0d8fa118fc222ae26fbe3fd6ef0ac22b4d4eb10f330e3d842adbc7f"
+        },
+        {
+          "index": 4,
+          "doc_id": "6c6026f40b9524f0",
+          "chunk_id": "7fd2c613583fc99d",
+          "text_sha256": "acb9e47bede8ba9c90ea7be8d5ea2fe797dc37c8e07524d8a990d2fb3e8abf0d"
+        }
+      ],
+      "gold_doc_ids": [
+        "87d1e1a5d51386bc"
+      ],
+      "raw_contents": [
+        "{\"answer\": \"The contexts support the claim: TET2 inactivation by loss-of-function mutation, deletion, or IDH1/2 mutation is a common event in myeloid and lymphoid malignancies, and Tet2 haploinsufficiency initiates myeloid and lymphoid transformations.\", \"citations\": [{\"chunk_index\": 0, \"quote\": \"TET2 inactivation through loss-of-function mutation, deletion and IDH1/2 (Isocitrate Dehydrogenase 1 and 2) gene mutation is a common event in myeloid and lymphoid malignancies.\"}, {\"chunk_index\": 0, \"quote\": \"Analysis of Tet2 knockout mice, which are viable and fertile, demonstrated that Tet2 functions as a tumor suppressor whose haploinsufficiency initiates myeloid and lymphoid transformations.\"}], \"abstained\": false}"
+      ],
+      "response": {
+        "schema_version": 1,
+        "query": "Claim: The loss of the TET protein functions may have dire biological consequences, such as myeloid cancers.\nDo the contexts support or contradict this claim? Answer briefly, citing the evidence. If the contexts do not address the claim, abstain.",
+        "answer": "The contexts support the claim: TET2 inactivation by loss-of-function mutation, deletion, or IDH1/2 mutation is a common event in myeloid and lymphoid malignancies, and Tet2 haploinsufficiency initiates myeloid and lymphoid transformations.",
+        "citations": [
+          {
+            "doc_id": "3e4b130d821d6a82",
+            "chunk_id": "bb3b92f0c99cad53",
+            "source": "scifact/11951999.txt",
+            "content_hash": "eee5b8e3fc5c151d64f488936848862c531ebdd3f0778f167c646aa21f0a815f",
+            "heading_path": [],
+            "page": null,
+            "page_end": null,
+            "start_char": 1474,
+            "end_char": 1663,
+            "quote": "Analysis of Tet2 knockout mice, which are viable and fertile, demonstrated that Tet2 functions as a tumor suppressor whose haploinsufficiency initiates myeloid and lymphoid transformations."
+          }
+        ],
+        "generator": "openai",
+        "abstained": false,
+        "model_name": "cline-pass/deepseek-v4.1-flash"
+      },
+      "error": null,
+      "grade": {
+        "query_id": "1226",
+        "kind": "no_relevant",
+        "parse_ok": true,
+        "abstained": false,
+        "n_raw_citations": 2,
+        "n_valid_citations": 1,
+        "n_valid_gold_citations": 0,
+        "final_citations_consistent": true,
+        "gold_doc_ids_in_context": [],
+        "cited_doc_ids": [
+          "3e4b130d821d6a82"
+        ],
+        "citation_recall": null,
+        "citation_precision": 0.0,
+        "abstention_correct": false,
+        "error": null
+      }
+    },
+    {
+      "query_id": "1273",
+      "kind": "no_relevant",
+      "question": "Claim: The sliding activity of kinesin-8 protein Kip3 promotes bipolar spindle assembly.\nDo the contexts support or contradict this claim? Answer briefly, citing the evidence. If the contexts do not address the claim, abstain.",
+      "contexts": [
+        {
+          "index": 0,
+          "doc_id": "fd371fc0ca9e7963",
+          "chunk_id": "58ef021c28bc121d",
+          "text_sha256": "a42253ac71259dc39e39ed5735d11d386196d27aa829fbd674e602f2755f19d1"
+        },
+        {
+          "index": 1,
+          "doc_id": "325e03c9cdd1757a",
+          "chunk_id": "a852e9204a17288d",
+          "text_sha256": "521ed073cfa62454d2a6028f3472090f571a4a844c00533f652d9db1ed8af86c"
+        },
+        {
+          "index": 2,
+          "doc_id": "98837a489b90c828",
+          "chunk_id": "9dbb66cb1ea41ce7",
+          "text_sha256": "d4d010673095617b4fafceb6db6c6871d1bdf5fac642173ececa4a463a0cbf66"
+        },
+        {
+          "index": 3,
+          "doc_id": "c7563434685cbc3a",
+          "chunk_id": "dd3e47c5c3f0fa5e",
+          "text_sha256": "ee73ee4d32d9822ddad1f0b8ce10bc4519cf5b643b42310b3573da717f2aa9d4"
+        },
+        {
+          "index": 4,
+          "doc_id": "44991608708e8232",
+          "chunk_id": "8b38c722edc03559",
+          "text_sha256": "9a94672bfacf09df39a279ae57aba2ca22567270ccbe8f0fe55f2de093893e51"
+        }
+      ],
+      "gold_doc_ids": [
+        "02885aa2f37c24fc"
+      ],
+      "raw_contents": [
+        "{\"answer\": \"\", \"citations\": [], \"abstained\": true}"
+      ],
+      "response": {
+        "schema_version": 1,
+        "query": "Claim: The sliding activity of kinesin-8 protein Kip3 promotes bipolar spindle assembly.\nDo the contexts support or contradict this claim? Answer briefly, citing the evidence. If the contexts do not address the claim, abstain.",
+        "answer": "",
+        "citations": [],
+        "generator": "openai",
+        "abstained": true,
+        "model_name": "cline-pass/deepseek-v4.1-flash"
+      },
+      "error": null,
+      "grade": {
+        "query_id": "1273",
+        "kind": "no_relevant",
+        "parse_ok": true,
+        "abstained": true,
+        "n_raw_citations": 0,
+        "n_valid_citations": 0,
+        "n_valid_gold_citations": 0,
+        "final_citations_consistent": null,
+        "gold_doc_ids_in_context": [],
+        "cited_doc_ids": [],
+        "citation_recall": null,
+        "citation_precision": null,
+        "abstention_correct": true,
+        "error": null
+      }
+    },
+    {
+      "query_id": "129",
+      "kind": "no_relevant",
+      "question": "Claim: Articles published in open access format are less likely to be cited than traditional journals.\nDo the contexts support or contradict this claim? Answer briefly, citing the evidence. If the contexts do not address the claim, abstain.",
+      "contexts": [
+        {
+          "index": 0,
+          "doc_id": "93bf4d4211728a06",
+          "chunk_id": "1d2bf90fea8ce4cc",
+          "text_sha256": "f5eb5de92ea694349971166f1cb01f5f8916831fc69eabbbac5e7b84c2617217"
+        },
+        {
+          "index": 1,
+          "doc_id": "83fa8a88f0a77b3d",
+          "chunk_id": "f07fa0bcbb5c19cd",
+          "text_sha256": "99cd18aa93269347d02302c02c412895584e3d2a4321ba6332ef2cf9e19f4a2a"
+        },
+        {
+          "index": 2,
+          "doc_id": "7a9362f08c563a83",
+          "chunk_id": "981af13e7a8a856e",
+          "text_sha256": "14eea5e40250df42256e96061213cd26cc80dfbc64d8ad3969aa9c5a4d398ebc"
+        },
+        {
+          "index": 3,
+          "doc_id": "35b6237c1917513b",
+          "chunk_id": "f235e01546afea60",
+          "text_sha256": "69392acde307e637834202053a3fb3e6da7e14c705f36e21e89638c95c735eaa"
+        },
+        {
+          "index": 4,
+          "doc_id": "72767887ec1a4733",
+          "chunk_id": "e63998436997f81f",
+          "text_sha256": "c9471eb2a404a284eb389aa5f3d62b19d4ea294b6895a0047482b9ec7936e21f"
+        }
+      ],
+      "gold_doc_ids": [
+        "000e0f41dc9fb161"
+      ],
+      "raw_contents": [
+        "{\"answer\": \"\", \"citations\": [], \"abstained\": true}"
+      ],
+      "response": {
+        "schema_version": 1,
+        "query": "Claim: Articles published in open access format are less likely to be cited than traditional journals.\nDo the contexts support or contradict this claim? Answer briefly, citing the evidence. If the contexts do not address the claim, abstain.",
+        "answer": "",
+        "citations": [],
+        "generator": "openai",
+        "abstained": true,
+        "model_name": "cline-pass/deepseek-v4.1-flash"
+      },
+      "error": null,
+      "grade": {
+        "query_id": "129",
+        "kind": "no_relevant",
+        "parse_ok": true,
+        "abstained": true,
+        "n_raw_citations": 0,
+        "n_valid_citations": 0,
+        "n_valid_gold_citations": 0,
+        "final_citations_consistent": null,
+        "gold_doc_ids_in_context": [],
+        "cited_doc_ids": [],
+        "citation_recall": null,
+        "citation_precision": null,
+        "abstention_correct": true,
+        "error": null
+      }
+    },
+    {
+      "query_id": "208",
+      "kind": "no_relevant",
+      "question": "Claim: CHEK2 is not associated with breast cancer.\nDo the contexts support or contradict this claim? Answer briefly, citing the evidence. If the contexts do not address the claim, abstain.",
+      "contexts": [
+        {
+          "index": 0,
+          "doc_id": "6b1f261f24a5efd2",
+          "chunk_id": "ed7516c9e2ee2ef3",
+          "text_sha256": "1bad35e3b4b3504469471af925890a7d552ef0cadce1b93f954cdd58ed2f68a3"
+        },
+        {
+          "index": 1,
+          "doc_id": "0fbdbe58d6606514",
+          "chunk_id": "7478da7132d38971",
+          "text_sha256": "ba4779be43099c5633ac3788565de3beff79560167deb48b381097a4f7de1344"
+        },
+        {
+          "index": 2,
+          "doc_id": "8c9afce4a4a759ed",
+          "chunk_id": "0ef379f7d0ce41f7",
+          "text_sha256": "e5c8a0e02d298439b7f3010f2c38d74e33aaf8bbdde496786dcc9fa43f82af5f"
+        },
+        {
+          "index": 3,
+          "doc_id": "322ceeacfac31ecd",
+          "chunk_id": "7330ac7b392cb0b3",
+          "text_sha256": "ab735afaade3bfd8a88d6f62d4d316f93b72f7d4bd0f18405fc3bafbbcefdbca"
+        },
+        {
+          "index": 4,
+          "doc_id": "eafb6cfe28af6b6a",
+          "chunk_id": "741bd5c43fb3f62b",
+          "text_sha256": "3a1fd719a210ed963019c17288038625b662249315472a46231e266d98a8ddfa"
+        }
+      ],
+      "gold_doc_ids": [
+        "3eeb53b8f36aeaa3"
+      ],
+      "raw_contents": [
+        "{\"answer\": \"\", \"citations\": [], \"abstained\": true}"
+      ],
+      "response": {
+        "schema_version": 1,
+        "query": "Claim: CHEK2 is not associated with breast cancer.\nDo the contexts support or contradict this claim? Answer briefly, citing the evidence. If the contexts do not address the claim, abstain.",
+        "answer": "",
+        "citations": [],
+        "generator": "openai",
+        "abstained": true,
+        "model_name": "cline-pass/deepseek-v4.1-flash"
+      },
+      "error": null,
+      "grade": {
+        "query_id": "208",
+        "kind": "no_relevant",
+        "parse_ok": true,
+        "abstained": true,
+        "n_raw_citations": 0,
+        "n_valid_citations": 0,
+        "n_valid_gold_citations": 0,
+        "final_citations_consistent": null,
+        "gold_doc_ids_in_context": [],
+        "cited_doc_ids": [],
+        "citation_recall": null,
+        "citation_precision": null,
+        "abstention_correct": true,
+        "error": null
+      }
+    },
+    {
+      "query_id": "3",
+      "kind": "no_relevant",
+      "question": "Claim: 1,000 genomes project enables mapping of genetic sequence variation consisting of rare variants with larger penetrance effects than common variants.\nDo the contexts support or contradict this claim? Answer briefly, citing the evidence. If the contexts do not address the claim, abstain.",
+      "contexts": [
+        {
+          "index": 0,
+          "doc_id": "6a99b8beb7de0edf",
+          "chunk_id": "79d86a952ffd9901",
+          "text_sha256": "34609b69ebb74cf0f11294c515ca889f4669277ce18d45baef56815ef4515a6d"
+        },
+        {
+          "index": 1,
+          "doc_id": "3758be7584a0be57",
+          "chunk_id": "693ea0e1deb1a3c7",
+          "text_sha256": "06dfe36ad29e6e9da607cb66e4eef26df4791bc3c4a0469d19da3d9ab74e624f"
+        },
+        {
+          "index": 2,
+          "doc_id": "e3a569ce41bcbd1c",
+          "chunk_id": "bf6f08878bf7bdd9",
+          "text_sha256": "f30668a818fb112934108b58d60a65c14f43601f786d8d9a077064829c5e45d5"
+        },
+        {
+          "index": 3,
+          "doc_id": "e7946554a923277c",
+          "chunk_id": "4349fe2f39f084c8",
+          "text_sha256": "4028dea74fa2fecdb3933deaba16cec2ba523a68bb1ddc04d310baf32a4fb276"
+        },
+        {
+          "index": 4,
+          "doc_id": "30499319308c5cf4",
+          "chunk_id": "2acae048ab298514",
+          "text_sha256": "33c9c0216b75685554967031a8c63c03054468f9ff16c1f7e584e32e0356be6f"
+        }
+      ],
+      "gold_doc_ids": [
+        "29c9da12f80161bc"
+      ],
+      "raw_contents": [
+        "{\"answer\": \"\", \"citations\": [], \"abstained\": true}"
+      ],
+      "response": {
+        "schema_version": 1,
+        "query": "Claim: 1,000 genomes project enables mapping of genetic sequence variation consisting of rare variants with larger penetrance effects than common variants.\nDo the contexts support or contradict this claim? Answer briefly, citing the evidence. If the contexts do not address the claim, abstain.",
+        "answer": "",
+        "citations": [],
+        "generator": "openai",
+        "abstained": true,
+        "model_name": "cline-pass/deepseek-v4.1-flash"
+      },
+      "error": null,
+      "grade": {
+        "query_id": "3",
+        "kind": "no_relevant",
+        "parse_ok": true,
+        "abstained": true,
+        "n_raw_citations": 0,
+        "n_valid_citations": 0,
+        "n_valid_gold_citations": 0,
+        "final_citations_consistent": null,
+        "gold_doc_ids_in_context": [],
+        "cited_doc_ids": [],
+        "citation_recall": null,
+        "citation_precision": null,
+        "abstention_correct": true,
+        "error": null
+      }
+    },
+    {
+      "query_id": "577",
+      "kind": "no_relevant",
+      "question": "Claim: In mice, P. chabaudi parasites are able to proliferate faster early in infection when inoculated at lower numbers than when inoculated at high numbers.\nDo the contexts support or contradict this claim? Answer briefly, citing the evidence. If the contexts do not address the claim, abstain.",
+      "contexts": [
+        {
+          "index": 0,
+          "doc_id": "dc75c58d5ecea6d4",
+          "chunk_id": "f6dfa8ab93e2b195",
+          "text_sha256": "b5f4b27c61a529d5cdc3bc0c933a8f25ad50d0c41c229b5271ed72c90b26fb6f"
+        },
+        {
+          "index": 1,
+          "doc_id": "026c85a2dbfa8d09",
+          "chunk_id": "5d318775496d24cc",
+          "text_sha256": "da77cc6121e55e4911ce0d315534c980094b0c180f4a4131da08fbddc33bd91c"
+        },
+        {
+          "index": 2,
+          "doc_id": "a6cb8162a26b9ea0",
+          "chunk_id": "70d9e473ed8fec5c",
+          "text_sha256": "367d1638c0934d44b9a1d0057dec6937de9dc74381bfe07645a8f4faf5e905c4"
+        },
+        {
+          "index": 3,
+          "doc_id": "7e11c0f65ff1f204",
+          "chunk_id": "8881533eac7be389",
+          "text_sha256": "d9c914fa3f6b0617181df0b5abeff036c9543b623d5fda9082663223b29a8cde"
+        },
+        {
+          "index": 4,
+          "doc_id": "474030e7176ff59a",
+          "chunk_id": "eccfb089a6752676",
+          "text_sha256": "fec4d1039957e3c26ede64767146b937f13f0f7d7502298904b2dc6b9c836ac5"
+        }
+      ],
+      "gold_doc_ids": [
+        "a6f8a1a2fdf3f8a1"
+      ],
+      "raw_contents": [
+        "{\"answer\": \"\", \"citations\": [], \"abstained\": true}"
+      ],
+      "response": {
+        "schema_version": 1,
+        "query": "Claim: In mice, P. chabaudi parasites are able to proliferate faster early in infection when inoculated at lower numbers than when inoculated at high numbers.\nDo the contexts support or contradict this claim? Answer briefly, citing the evidence. If the contexts do not address the claim, abstain.",
+        "answer": "",
+        "citations": [],
+        "generator": "openai",
+        "abstained": true,
+        "model_name": "cline-pass/deepseek-v4.1-flash"
+      },
+      "error": null,
+      "grade": {
+        "query_id": "577",
+        "kind": "no_relevant",
+        "parse_ok": true,
+        "abstained": true,
+        "n_raw_citations": 0,
+        "n_valid_citations": 0,
+        "n_valid_gold_citations": 0,
+        "final_citations_consistent": null,
+        "gold_doc_ids_in_context": [],
+        "cited_doc_ids": [],
+        "citation_recall": null,
+        "citation_precision": null,
+        "abstention_correct": true,
+        "error": null
+      }
+    },
+    {
+      "query_id": "75",
+      "kind": "no_relevant",
+      "question": "Claim: Active H. pylori urease has a polymeric structure that compromises two subunits, UreA and UreB.\nDo the contexts support or contradict this claim? Answer briefly, citing the evidence. If the contexts do not address the claim, abstain.",
+      "contexts": [
+        {
+          "index": 0,
+          "doc_id": "1a7a16e4dd3b5822",
+          "chunk_id": "6b3feb53795dc0f1",
+          "text_sha256": "f49aac83bd8005281fe142ee396a07f0e55e881dc158de8cbb6e221c5ab3c229"
+        },
+        {
+          "index": 1,
+          "doc_id": "50efaa3cd7df84a4",
+          "chunk_id": "ce5128e4b439f076",
+          "text_sha256": "4cd53317ae421929563b339163c067fad3e97ca6924f5305c2ac4fa8e9f31162"
+        },
+        {
+          "index": 2,
+          "doc_id": "f97c394ab2d89780",
+          "chunk_id": "a2728ce934e8695f",
+          "text_sha256": "cd1facfbae1ab1665e08977e8cad5fca4752582af70337c8fb96d27a4a63c24a"
+        },
+        {
+          "index": 3,
+          "doc_id": "c3abf3d435188740",
+          "chunk_id": "cf20b03d48da7dae",
+          "text_sha256": "243213ac7696c155e9b5ccf9f00bb940ea4d45bac95571372e427ad5cee779b7"
+        },
+        {
+          "index": 4,
+          "doc_id": "49eeae57abbc3b35",
+          "chunk_id": "0400ae629556a528",
+          "text_sha256": "4a7f7b7e9b57bea40896debf05d8c8038ddeaf69a3f1dc53f4b827873dbbf9e3"
+        }
+      ],
+      "gold_doc_ids": [
+        "53f76d9ac7947763"
+      ],
+      "raw_contents": [
+        "{\"answer\": \"\", \"citations\": [], \"abstained\": true}"
+      ],
+      "response": {
+        "schema_version": 1,
+        "query": "Claim: Active H. pylori urease has a polymeric structure that compromises two subunits, UreA and UreB.\nDo the contexts support or contradict this claim? Answer briefly, citing the evidence. If the contexts do not address the claim, abstain.",
+        "answer": "",
+        "citations": [],
+        "generator": "openai",
+        "abstained": true,
+        "model_name": "cline-pass/deepseek-v4.1-flash"
+      },
+      "error": null,
+      "grade": {
+        "query_id": "75",
+        "kind": "no_relevant",
+        "parse_ok": true,
+        "abstained": true,
+        "n_raw_citations": 0,
+        "n_valid_citations": 0,
+        "n_valid_gold_citations": 0,
+        "final_citations_consistent": null,
+        "gold_doc_ids_in_context": [],
+        "cited_doc_ids": [],
+        "citation_recall": null,
+        "citation_precision": null,
+        "abstention_correct": true,
+        "error": null
+      }
+    },
+    {
+      "query_id": "805",
+      "kind": "no_relevant",
+      "question": "Claim: Monoclonal antibody targeting of N-cadherin inhibits metastasis.\nDo the contexts support or contradict this claim? Answer briefly, citing the evidence. If the contexts do not address the claim, abstain.",
+      "contexts": [
+        {
+          "index": 0,
+          "doc_id": "6f6fdaafbb5891ac",
+          "chunk_id": "81fa2ded212c0ca2",
+          "text_sha256": "ce67291f0a529b1817d498d571aebe3ad5b1259f66f2c57ec44f3a8a1db248d3"
+        },
+        {
+          "index": 1,
+          "doc_id": "e9a1249b56cf6ee4",
+          "chunk_id": "e74cfc12bf25613a",
+          "text_sha256": "88604e3ce832c9312ffd3cc33cc84d2c7c801a75c56472dc97c62fe1e68bb231"
+        },
+        {
+          "index": 2,
+          "doc_id": "1bee11d8cb695796",
+          "chunk_id": "71963f58c05536ee",
+          "text_sha256": "244ca037408db598538328705ea249e32dec08f0d6ff9d7512f36c6cf0e1d915"
+        },
+        {
+          "index": 3,
+          "doc_id": "a7cb2bd8c8ebbd37",
+          "chunk_id": "3b8fc2fbea739f7c",
+          "text_sha256": "94f8f0d7847e99226ee78d669c059871a82ff4e382f2e582e20a53a1c49ff2d4"
+        },
+        {
+          "index": 4,
+          "doc_id": "47ca47d186ea4e34",
+          "chunk_id": "a0401392e446cfac",
+          "text_sha256": "f5c942a0db6fd750feed84f8121c986832be0637e84ac652415bd8a73d106456"
+        }
+      ],
+      "gold_doc_ids": [
+        "945789b460963dc3"
+      ],
+      "raw_contents": [
+        "{\"answer\": \"\", \"citations\": [], \"abstained\": true}"
+      ],
+      "response": {
+        "schema_version": 1,
+        "query": "Claim: Monoclonal antibody targeting of N-cadherin inhibits metastasis.\nDo the contexts support or contradict this claim? Answer briefly, citing the evidence. If the contexts do not address the claim, abstain.",
+        "answer": "",
+        "citations": [],
+        "generator": "openai",
+        "abstained": true,
+        "model_name": "cline-pass/deepseek-v4.1-flash"
+      },
+      "error": null,
+      "grade": {
+        "query_id": "805",
+        "kind": "no_relevant",
+        "parse_ok": true,
+        "abstained": true,
+        "n_raw_citations": 0,
+        "n_valid_citations": 0,
+        "n_valid_gold_citations": 0,
+        "final_citations_consistent": null,
+        "gold_doc_ids_in_context": [],
+        "cited_doc_ids": [],
+        "citation_recall": null,
+        "citation_precision": null,
+        "abstention_correct": true,
+        "error": null
+      }
+    },
+    {
+      "query_id": "847",
+      "kind": "no_relevant",
+      "question": "Claim: New drugs for tuberculosis often do not penetrate the necrotic portion of a tuberculosis lesion in high concentrations.\nDo the contexts support or contradict this claim? Answer briefly, citing the evidence. If the contexts do not address the claim, abstain.",
+      "contexts": [
+        {
+          "index": 0,
+          "doc_id": "cbd07ba88e8b9bb7",
+          "chunk_id": "e4f85b32d6143d96",
+          "text_sha256": "32e84305b7627c82ed02f2252b9f9b3b72ef9932ac0e6e45f85ebab6127ff478"
+        },
+        {
+          "index": 1,
+          "doc_id": "ac04d00f8b98b89d",
+          "chunk_id": "4c53dbb72021d9db",
+          "text_sha256": "f1a882a5ad40ef5522a18790b3e92cc01b51b2567a3d29471bd553852c5bb663"
+        },
+        {
+          "index": 2,
+          "doc_id": "0161c59243bfbd08",
+          "chunk_id": "e9efe8a9d0146773",
+          "text_sha256": "32486a1337b4323090cd0a7075192bf6ae605a9ce9be5f5b0306b2b310c5eed1"
+        },
+        {
+          "index": 3,
+          "doc_id": "efc059f519b24187",
+          "chunk_id": "58afae3fc72e3e75",
+          "text_sha256": "fbc5b3ae0eb601f5119b2df2844efb08d9896db3591c0445271ff42f079bfc0a"
+        },
+        {
+          "index": 4,
+          "doc_id": "a2119b099ca62157",
+          "chunk_id": "97096017f8ba8649",
+          "text_sha256": "6edc7c61bbe17a98723d1f8bed4dd8cc0a4810c8ec9d70660cb6d6412d39eeb6"
+        }
+      ],
+      "gold_doc_ids": [
+        "187f9235c27dc610"
+      ],
+      "raw_contents": [
+        "{\"answer\": \"\", \"citations\": [], \"abstained\": true}"
+      ],
+      "response": {
+        "schema_version": 1,
+        "query": "Claim: New drugs for tuberculosis often do not penetrate the necrotic portion of a tuberculosis lesion in high concentrations.\nDo the contexts support or contradict this claim? Answer briefly, citing the evidence. If the contexts do not address the claim, abstain.",
+        "answer": "",
+        "citations": [],
+        "generator": "openai",
+        "abstained": true,
+        "model_name": "cline-pass/deepseek-v4.1-flash"
+      },
+      "error": null,
+      "grade": {
+        "query_id": "847",
+        "kind": "no_relevant",
+        "parse_ok": true,
+        "abstained": true,
+        "n_raw_citations": 0,
+        "n_valid_citations": 0,
+        "n_valid_gold_citations": 0,
+        "final_citations_consistent": null,
+        "gold_doc_ids_in_context": [],
+        "cited_doc_ids": [],
+        "citation_recall": null,
+        "citation_precision": null,
+        "abstention_correct": true,
+        "error": null
+      }
+    }
+  ]
+}

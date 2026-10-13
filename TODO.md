@@ -59,6 +59,13 @@ Short-horizon task list. Milestones and acceptance criteria live in `PLAN.md`.
 - [x] `scripts/bootstrap_ci.py` + `rag_engine.eval.bootstrap` paired bootstrap CI with unit tests
 - [x] Sidecar-bearing SciFact fastembed re-run at `99f28f6` committed with bootstrap CI summary; README cites the CIs (hybrid vs dense still "about the same") (2026-10-13)
 
+## M5 answer eval (done 2026-10-13)
+- [x] Code-first grader: citation span validity, citation recall/precision vs qrels gold, abstention (gold-removal ablation)
+- [x] Fixed-seed subset selection recorded in reports; request-keyed JSONL reply cache with record/replay
+- [x] Recorded run with `cline-pass/deepseek-v4.1-flash` (30 claims) committed with cache; README section with counts and caveats
+- [ ] Optional: secondary DeepSeek judge score, labelled self-graded (not started)
+- [ ] Optional: extractive-generator baseline on the same subset for comparison
+
 ## M6 - FastAPI service (next)
 - [ ] FastAPI service exposing retrieve/answer
 - [ ] Dockerfile + image build in CI
