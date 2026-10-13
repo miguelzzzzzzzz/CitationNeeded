@@ -57,6 +57,7 @@ Short-horizon task list. Milestones and acceptance criteria live in `PLAN.md`.
 - [x] README SciFact quality table from committed fastembed report (Chad-matched); hybrid vs dense "about the same" until bootstrap CI on a sidecar-bearing run
 - [x] Eval runner writes `*.per_query.json` sidecar alongside aggregate reports
 - [x] `scripts/bootstrap_ci.py` + `rag_engine.eval.bootstrap` paired bootstrap CI with unit tests
+- [x] Sidecar-bearing SciFact fastembed re-run at `99f28f6` committed with bootstrap CI summary; README cites the CIs (hybrid vs dense still "about the same") (2026-10-13)
 
 ## M6 - FastAPI service (next)
 - [ ] FastAPI service exposing retrieve/answer

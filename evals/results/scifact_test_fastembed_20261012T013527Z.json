@@ -1,0 +1,133 @@
+{
+  "schema_version": 2,
+  "created_at": "2026-10-12T01:35:27.042315+00:00",
+  "git_sha": "99f28f6352e8a93ee180197d0ece6d49e34bf421",
+  "git_dirty": false,
+  "hardware": {
+    "platform": "Linux-6.12.94+-x86_64-with-glibc2.41",
+    "processor": "",
+    "python": "3.13.5",
+    "cpu_count": 8
+  },
+  "config": {
+    "dataset": "scifact",
+    "split": "test",
+    "modes": [
+      "dense",
+      "lexical",
+      "hybrid",
+      "hybrid+rerank"
+    ],
+    "embedder": "fastembed",
+    "fusion": "rrf",
+    "rrf_k": 60,
+    "candidates": 50,
+    "top_k": 10,
+    "depth": 50,
+    "max_depth": null,
+    "chunk_strategy": "fixed",
+    "chunk_size": 512,
+    "chunk_overlap": 64,
+    "corpus_id": "scifact",
+    "rerank_model": "Xenova/ms-marco-MiniLM-L-6-v2"
+  },
+  "dataset_checksum": "5f7d1de60b170fc8027bb7898e2efca1",
+  "dataset_name": "scifact/test",
+  "n_documents": 5183,
+  "n_queries": 300,
+  "n_queries_unlabelled": 0,
+  "n_queries_skipped_no_relevant": 0,
+  "n_chunks": 5226,
+  "metrics": {
+    "dense": {
+      "recall@1": 0.5787222222222222,
+      "hit@1": 0.6033333333333334,
+      "recall@5": 0.773611111111111,
+      "hit@5": 0.7933333333333333,
+      "recall@10": 0.8412222222222222,
+      "hit@10": 0.8566666666666667,
+      "mrr@10": 0.6806216931216931,
+      "ndcg@10": 0.7148452307551046
+    },
+    "lexical": {
+      "recall@1": 0.5375,
+      "hit@1": 0.5533333333333333,
+      "recall@5": 0.7259444444444444,
+      "hit@5": 0.75,
+      "recall@10": 0.7907777777777778,
+      "hit@10": 0.81,
+      "mrr@10": 0.635867724867725,
+      "ndcg@10": 0.6690794488571239
+    },
+    "hybrid": {
+      "recall@1": 0.5673333333333332,
+      "hit@1": 0.59,
+      "recall@5": 0.7728333333333333,
+      "hit@5": 0.7933333333333333,
+      "recall@10": 0.8445555555555556,
+      "hit@10": 0.8566666666666667,
+      "mrr@10": 0.6765833333333336,
+      "ndcg@10": 0.7133076107622197
+    },
+    "hybrid+rerank": {
+      "recall@1": 0.5451111111111111,
+      "hit@1": 0.57,
+      "recall@5": 0.7385,
+      "hit@5": 0.76,
+      "recall@10": 0.8252222222222222,
+      "hit@10": 0.8366666666666667,
+      "mrr@10": 0.6549708994708994,
+      "ndcg@10": 0.6900253333093045
+    }
+  },
+  "retrieval": {
+    "dense": {
+      "initial_depth": 50.0,
+      "max_depth": 5226.0,
+      "max_depth_used": 50.0,
+      "mean_depth_used": 50.0,
+      "queries_short_of_k": 0.0
+    },
+    "lexical": {
+      "initial_depth": 50.0,
+      "max_depth": 5226.0,
+      "max_depth_used": 50.0,
+      "mean_depth_used": 50.0,
+      "queries_short_of_k": 0.0
+    },
+    "hybrid": {
+      "initial_depth": 50.0,
+      "max_depth": 5226.0,
+      "max_depth_used": 50.0,
+      "mean_depth_used": 50.0,
+      "queries_short_of_k": 0.0
+    },
+    "hybrid+rerank": {
+      "initial_depth": 50.0,
+      "max_depth": 5226.0,
+      "max_depth_used": 50.0,
+      "mean_depth_used": 50.0,
+      "queries_short_of_k": 0.0
+    }
+  },
+  "latency_ms": {
+    "dense": {
+      "retrieve_p50": 23.934409997309558,
+      "retrieve_p95": 40.09127301105764
+    },
+    "lexical": {
+      "retrieve_p50": 5.02218899782747,
+      "retrieve_p95": 7.745588998659514
+    },
+    "hybrid": {
+      "retrieve_p50": 38.09899800398853,
+      "retrieve_p95": 61.41960099921562
+    },
+    "hybrid+rerank": {
+      "retrieve_p50": 1477.655861992389,
+      "retrieve_p95": 1751.5708829887444
+    }
+  },
+  "notes": "",
+  "smoke_only": false
+}

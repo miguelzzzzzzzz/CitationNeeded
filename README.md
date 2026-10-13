@@ -161,12 +161,23 @@ re-ran and matched these aggregates to three decimals (2026-10-11).
 | hybrid | 0.7133 | 0.6766 | 0.8446 | 0.8567 |
 | hybrid+rerank | 0.6900 | 0.6550 | 0.8252 | 0.8367 |
 
-On this run, **hybrid and dense are about the same** on nDCG@10 (0.7133 vs
-0.7148). A paired bootstrap CI over per-query scores
-(`python scripts/bootstrap_ci.py …per_query.json --mode-a hybrid --mode-b dense`)
-is the honesty check for any stronger claim; the committed 2026-10-10 report
-predates the sidecar, so that CI is not claimed here yet. Lexical trails both;
-hybrid+rerank did not beat hybrid on this setup.
+A clean re-run at `99f28f6` (`git_dirty: false`,
+[`scifact_test_fastembed_20261012T013527Z.json`](evals/results/scifact_test_fastembed_20261012T013527Z.json))
+reproduced every aggregate metric above exactly and wrote a per-query sidecar. Paired
+bootstrap 95% CIs on its 300 queries (B=10,000, seed 0;
+[`…bootstrap_ci.json`](evals/results/scifact_test_fastembed_20261012T013527Z.bootstrap_ci.json)):
+
+| comparison (nDCG@10) | mean diff | 95% CI |
+| --- | ---: | ---: |
+| hybrid − dense | −0.0015 | [−0.0273, +0.0239] |
+| hybrid+rerank − hybrid | −0.0233 | [−0.0531, +0.0057] |
+| dense − lexical | +0.0458 | [+0.0085, +0.0829] |
+| hybrid − lexical | +0.0442 | [+0.0201, +0.0686] |
+
+So **hybrid and dense are about the same** on this setup (the interval spans
+0), and the reranker's drop versus hybrid is not distinguishable from noise
+either. Dense and hybrid both beat lexical BM25 (intervals exclude 0). This is one
+dataset with one embedder, so treat it as SciFact-specific.
 
 ## Development
 

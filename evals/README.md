@@ -55,6 +55,7 @@ SciFact.
 | `results/structured_hashing_*.json` | structured | hashing | true | Offline smoke; not a quality claim |
 | `results/scifact_test_hashing_*.json` | SciFact test | hashing | false | Harness smoke on SciFact; hashing embedder — not a quality claim |
 | `results/scifact_test_fastembed_20261010T184148Z.json` | SciFact test | fastembed | false | Real dense/lexical/hybrid/hybrid+rerank run at equal depth 50 (`git_dirty: false`). Chad matched aggregates to 3 decimals (Oct 11). |
+| `results/scifact_test_fastembed_20261012T013527Z.json` (+ `.per_query.json`, `.bootstrap_ci.json`) | SciFact test | fastembed | false | Clean re-run at `99f28f6`; aggregates identical to the 2026-10-10 report; sidecar means equal the aggregates; paired bootstrap CIs (seed 0, B=10,000). |
 
 ## Per-query sidecar (schema 1)
 
@@ -87,5 +88,10 @@ python scripts/bootstrap_ci.py evals/results/NAME.per_query.json \
   --mode-a hybrid --mode-b dense --metric ndcg@10
 ```
 
-The committed fastembed report from 2026-10-10 predates the sidecar; a clean
-re-run after this change produces both files. Do not invent per-query numbers.
+The 2026-10-10 fastembed report predates the sidecar. The clean re-run
+`scifact_test_fastembed_20261012T013527Z` has both files, and
+`….bootstrap_ci.json` records the CLI output for hybrid−dense,
+hybrid+rerank−hybrid, hybrid+rerank−dense, dense−lexical and hybrid−lexical on
+nDCG@10 and Recall@10 (95%, B=10,000, seed 0), with `ci_excludes_zero` per
+comparison. Only hybrid−lexical and dense−lexical exclude 0. Do not invent
+per-query numbers.
