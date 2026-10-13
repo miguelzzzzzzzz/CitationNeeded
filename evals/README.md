@@ -95,3 +95,34 @@ hybrid+rerank−hybrid, hybrid+rerank−dense, dense−lexical and hybrid−lexi
 nDCG@10 and Recall@10 (95%, B=10,000, seed 0), with `ci_excludes_zero` per
 comparison. Only hybrid−lexical and dense−lexical exclude 0. Do not invent
 per-query numbers.
+
+## Answer eval (M5, code-graded)
+
+`scripts/answer_eval.py` runs answer generation on a small fixed-seed SciFact
+test subset and grades it **with code only** (no LLM judge):
+
+- **Subset:** `pick_subsets` takes `--n-answerable` claims with
+  `random.Random(seed).sample(sorted(ids), n)` from the labelled test queries,
+  then `--n-no-relevant` more from the rest with `seed + 1`.
+- **Contexts:** hybrid retrieval (fastembed + BM25, RRF k=60), top `--k` (5)
+  chunks. `no_relevant` items are a gold-removal ablation: the claim's qrels
+  gold documents are removed from its retrieved list before taking `k`, so the
+  correct behaviour is to abstain. SciFact qrels can be incomplete, so a few such
+  items may still be answerable from non-gold abstracts.
+- **Grades** (from the raw model JSON, because the generator silently drops
+  ungrounded citations): citation span validity (quote occurs verbatim in the
+  cited context), citation recall and precision against qrels gold docs present
+  in the contexts, false abstention on answerable items with gold in context,
+  correct abstention on `no_relevant` items, and a consistency check of the
+  final response's document offsets. Unparseable replies count as failures.
+- **Reproducibility:** every raw reply is stored in a JSONL cache under
+  `evals/answers/`, keyed by sha256 of the exact request (endpoint, model,
+  messages, temperature, max_tokens). `--replay` recomputes the metrics with no
+  API call; a changed prompt, context or model is a cache miss, never a silent
+  mismatch. Recording is done on a developer box, never in CI. CI tests use fake
+  HTTP and pre-recorded caches only.
+- **Provenance:** reports record the model id, `created_at`, `git_sha`,
+  `git_dirty`, the selection method, the question template and the full config.
+  Reports store SciFact claims (CC BY 4.0) and context ids plus text hashes, not
+  abstract text; raw replies quote short abstract spans (ODC-By 1.0).
+

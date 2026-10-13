@@ -166,6 +166,10 @@ class OpenAICompatibleAnswerGenerator:
             raise ValueError("LLM endpoint returned a non-JSON body") from exc
         if not isinstance(envelope, dict):
             raise ValueError("LLM response body is not a JSON object")
+        # Some gateways (e.g. Cline) wrap the OpenAI payload as {"data": {...}}.
+        inner = envelope.get("data")
+        if "choices" not in envelope and isinstance(inner, dict):
+            envelope = inner
         choices = envelope.get("choices")
         if not isinstance(choices, list) or not choices:
             raise ValueError("LLM response contains no choices")

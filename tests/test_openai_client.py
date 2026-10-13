@@ -297,3 +297,25 @@ def test_case_insensitive_quote_locate(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setattr("urllib.request.urlopen", fake)
     response = make_generator().generate("cats", [hit])
     assert response.citations[0].quote == "Cats sleep a lot."
+
+
+def test_data_wrapped_envelope_is_unwrapped(monkeypatch: pytest.MonkeyPatch) -> None:
+    # Gateways such as Cline return {"data": <OpenAI payload>}.
+    payload = {
+        "answer": "Cats sleep a lot.",
+        "citations": [{"chunk_index": 0, "quote": "Cats sleep a lot."}],
+        "abstained": False,
+    }
+    inner = json.loads(chat_envelope(json.dumps(payload)))
+    fake = FakeHTTP([json.dumps({"data": inner, "success": True}).encode()])
+    monkeypatch.setattr("urllib.request.urlopen", fake)
+    response = make_generator().generate("cats", [make_hit("Cats sleep a lot.")])
+    assert response.answer == "Cats sleep a lot."
+    assert [c.quote for c in response.citations] == ["Cats sleep a lot."]
+
+
+def test_data_key_without_object_is_not_unwrapped(monkeypatch: pytest.MonkeyPatch) -> None:
+    fake = FakeHTTP([json.dumps({"data": "nope"}).encode()])
+    monkeypatch.setattr("urllib.request.urlopen", fake)
+    with pytest.raises(ValueError, match="no choices"):
+        make_generator().generate("cats", [make_hit("Cats sleep a lot.")])

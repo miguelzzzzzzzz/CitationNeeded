@@ -7,6 +7,7 @@ All notable changes to this project are documented here. The format follows
 ## [Unreleased]
 
 ### Added
+- M5 answer eval (code-graded): `rag_engine.eval.answers` (fixed-seed subset selection, raw-reply parsing, citation span validity, citation recall/precision vs qrels gold, abstention grading, aggregation), `rag_engine.eval.answer_cache` (request-keyed JSONL reply cache and `CachedAnswerGenerator` with record/replay modes), `rag_engine.eval.answer_runner` (gold-removal `no_relevant` items with exactly k contexts, run loop, report), and box-only `scripts/answer_eval.py`. The OpenAI-compatible client now unwraps `{"data": {...}}` gateway envelopes (Cline).
 - SciFact fastembed re-run at `99f28f6` (`git_dirty: false`) with its per-query sidecar and `….bootstrap_ci.json` (paired bootstrap, 95%, B=10,000, seed 0). Aggregates match the 2026-10-10 report exactly. hybrid − dense nDCG@10 is −0.0015 [−0.0273, +0.0239], so the README keeps "about the same"; dense and hybrid beat lexical (CIs exclude 0); hybrid+rerank − hybrid spans 0.
 - Eval honesty pack (pre-M6): `run_evaluation` returns per-query scores; `write_report` writes a sibling `*.per_query.json` sidecar (schema 1). `rag_engine.eval.bootstrap.paired_bootstrap_ci` + `scripts/bootstrap_ci.py` for paired hybrid-vs-dense CIs. README SciFact quality table from the committed fastembed report (Chad-matched aggregates; hybrid vs dense described as about the same until a sidecar-bearing bootstrap CI is cited).
 - Answer generation (M5 / ADR-0004): `rag_engine.answering` with `AnswerGenerator`
