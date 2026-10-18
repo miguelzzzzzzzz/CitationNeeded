@@ -7,8 +7,10 @@ import hashlib
 import pytest
 
 from rag_engine.answering.models import AnswerResponse, Citation
+from rag_engine.eval import answers
 from rag_engine.eval.answers import (
     ANSWER_EVAL_SCHEMA_VERSION,
+    MIN_QUOTE_CHARS,
     SELECTION_METHOD,
     AnswerGrade,
     EvalContext,
@@ -147,6 +149,11 @@ def make_grade(
 def test_constants() -> None:
     assert ANSWER_EVAL_SCHEMA_VERSION == 1
     assert "random.Random" in SELECTION_METHOD
+
+
+def test_min_quote_chars_exported() -> None:
+    assert MIN_QUOTE_CHARS == 20
+    assert "MIN_QUOTE_CHARS" in answers.__all__
 
 
 # ---------------------------------------------------------------------------
@@ -330,17 +337,31 @@ def test_parse_raw_answer_abstained_true() -> None:
 
 
 def test_grade_answer_valid_citation_and_gold() -> None:
+    quote = "hello world from the first context"
     contexts = [
-        EvalContext(index=0, doc_id="A", chunk_id="c0", start_char=0, text="hello"),
-        EvalContext(index=1, doc_id="B", chunk_id="c1", start_char=0, text="world"),
+        EvalContext(index=0, doc_id="A", chunk_id="c0", start_char=0, text=quote),
+        EvalContext(
+            index=1,
+            doc_id="B",
+            chunk_id="c1",
+            start_char=0,
+            text="a second context for document B",
+        ),
     ]
     raw = (
-        '{"answer": "hi", "abstained": false, "citations": [{"chunk_index": 0, "quote": "hello"}]}'
+        '{"answer": "hi", "abstained": false, "citations": ['
+        f'{{"chunk_index": 0, "quote": "{quote}"}}]}}'
     )
     resp = make_response(
         answer="hi",
         citations=(
-            make_citation(doc_id="A", chunk_id="c0", start_char=0, end_char=5, quote="hello"),
+            make_citation(
+                doc_id="A",
+                chunk_id="c0",
+                start_char=0,
+                end_char=len(quote),
+                quote=quote,
+            ),
         ),
     )
     grade = grade_answer(
@@ -369,14 +390,20 @@ def test_grade_answer_valid_citation_and_gold() -> None:
 
 def test_grade_answer_invalid_citations() -> None:
     contexts = [
-        EvalContext(index=0, doc_id="A", chunk_id="c0", start_char=0, text="hello world"),
+        EvalContext(
+            index=0,
+            doc_id="A",
+            chunk_id="c0",
+            start_char=0,
+            text="hello world from the first context",
+        ),
     ]
     raw = (
         '{"answer": "x", "abstained": false, "citations": ['
-        '{"chunk_index": 5, "quote": "hello"},'
-        '{"chunk_index": 0, "quote": "nope"},'
+        '{"chunk_index": 5, "quote": "hello world from the first context"},'
+        '{"chunk_index": 0, "quote": "text that is not in the context"},'
         '{"chunk_index": 0, "quote": "   "},'
-        '{"chunk_index": 0, "quote": "HELLO"}'
+        '{"chunk_index": 0, "quote": "HELLO WORLD FROM THE FIRST CONTEXT"}'
         "]}"
     )
     grade = grade_answer(
@@ -395,16 +422,115 @@ def test_grade_answer_invalid_citations() -> None:
     assert grade.citation_precision is None
 
 
+def test_grade_answer_nineteen_char_quote_is_invalid() -> None:
+    # A 19-character quote is a verbatim substring but below the minimum length.
+    quote = "hello world from th"
+    assert len(quote) == MIN_QUOTE_CHARS - 1
+    ctx = EvalContext(
+        index=0,
+        doc_id="A",
+        chunk_id="c0",
+        start_char=0,
+        text="hello world from the first context",
+    )
+    assert quote in ctx.text
+    raw = f'{{"answer": "x", "citations": [{{"chunk_index": 0, "quote": "{quote}"}}]}}'
+    grade = grade_answer(
+        query_id="q",
+        kind=ItemKind.ANSWERABLE,
+        contexts=[ctx],
+        gold_doc_ids={"A"},
+        raw_content=raw,
+        response=None,
+    )
+    assert grade.n_raw_citations == 1
+    assert grade.n_valid_citations == 0
+    assert grade.cited_doc_ids == ()
+    assert grade.citation_recall == pytest.approx(0.0)
+    assert grade.citation_precision is None
+
+
+def test_grade_answer_twenty_char_quote_is_valid() -> None:
+    # Exactly MIN_QUOTE_CHARS characters is enough when the span is grounded.
+    quote = "hello world from the"
+    assert len(quote) == MIN_QUOTE_CHARS
+    ctx = EvalContext(
+        index=0,
+        doc_id="A",
+        chunk_id="c0",
+        start_char=0,
+        text="hello world from the first context",
+    )
+    assert quote in ctx.text
+    raw = f'{{"answer": "x", "citations": [{{"chunk_index": 0, "quote": "{quote}"}}]}}'
+    grade = grade_answer(
+        query_id="q",
+        kind=ItemKind.ANSWERABLE,
+        contexts=[ctx],
+        gold_doc_ids={"A"},
+        raw_content=raw,
+        response=None,
+    )
+    assert grade.n_raw_citations == 1
+    assert grade.n_valid_citations == 1
+    assert grade.n_valid_gold_citations == 1
+    assert grade.cited_doc_ids == ("A",)
+    assert grade.citation_precision == pytest.approx(1.0)
+
+
+def test_grade_answer_stripped_quote_below_minimum_is_invalid() -> None:
+    # The raw quote is 21 characters and appears verbatim in the context, but its
+    # stripped form is only 19 characters, so the span is not credible evidence.
+    context_text = "  hello world from th and then some more text"
+    quote = "  hello world from th"
+    assert len(quote) >= MIN_QUOTE_CHARS
+    assert len(quote.strip()) < MIN_QUOTE_CHARS
+    assert quote in context_text
+    ctx = EvalContext(index=0, doc_id="A", chunk_id="c0", start_char=0, text=context_text)
+    raw = f'{{"answer": "x", "citations": [{{"chunk_index": 0, "quote": "{quote}"}}]}}'
+    grade = grade_answer(
+        query_id="q",
+        kind=ItemKind.ANSWERABLE,
+        contexts=[ctx],
+        gold_doc_ids={"A"},
+        raw_content=raw,
+        response=None,
+    )
+    assert grade.n_raw_citations == 1
+    assert grade.n_valid_citations == 0
+    assert grade.cited_doc_ids == ()
+    assert grade.citation_recall == pytest.approx(0.0)
+    assert grade.citation_precision is None
+
+
 def test_grade_answer_recall_precision_two_gold() -> None:
     contexts = [
-        EvalContext(index=0, doc_id="A", chunk_id="c0", start_char=0, text="alpha"),
-        EvalContext(index=1, doc_id="B", chunk_id="c1", start_char=0, text="beta"),
-        EvalContext(index=2, doc_id="C", chunk_id="c2", start_char=0, text="gamma"),
+        EvalContext(
+            index=0,
+            doc_id="A",
+            chunk_id="c0",
+            start_char=0,
+            text="alpha is the first context text",
+        ),
+        EvalContext(
+            index=1,
+            doc_id="B",
+            chunk_id="c1",
+            start_char=0,
+            text="beta is the second context text",
+        ),
+        EvalContext(
+            index=2,
+            doc_id="C",
+            chunk_id="c2",
+            start_char=0,
+            text="gamma is the third context text",
+        ),
     ]
     raw = (
         '{"answer": "x", "citations": ['
-        '{"chunk_index": 0, "quote": "alpha"},'
-        '{"chunk_index": 2, "quote": "gamma"}'
+        '{"chunk_index": 0, "quote": "alpha is the first context text"},'
+        '{"chunk_index": 2, "quote": "gamma is the third context text"}'
         "]}"
     )
     grade = grade_answer(
@@ -751,14 +877,26 @@ def test_aggregate_grades_empty() -> None:
 
 
 def test_raw_citation_with_missing_index_or_quote_is_invalid() -> None:
-    # Both entries parse to (None, "Cats") and (0, None): neither can be checked.
-    ctx = EvalContext(index=0, doc_id="A", chunk_id="c0", start_char=0, text="Cats nap.")
+    # Both entries parse to (None, "Cats napping in the afternoon") and (0, None):
+    # neither can be checked, even though the quote is long enough to pass alone.
+    ctx = EvalContext(
+        index=0,
+        doc_id="A",
+        chunk_id="c0",
+        start_char=0,
+        text="Cats napping in the afternoon sun.",
+    )
     grade = grade_answer(
         query_id="q",
         kind=ItemKind.ANSWERABLE,
         contexts=[ctx],
         gold_doc_ids={"A"},
-        raw_content='{"answer": "x", "citations": [{"quote": "Cats"}, {"chunk_index": 0}]}',
+        raw_content=(
+            '{"answer": "x", "citations": ['
+            '{"quote": "Cats napping in the afternoon"},'
+            '{"chunk_index": 0}'
+            "]}"
+        ),
         response=None,
     )
     assert grade.n_raw_citations == 2

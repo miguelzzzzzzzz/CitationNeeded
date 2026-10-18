@@ -5,6 +5,10 @@ Grades are computed from both the raw model reply and the final
 whose quote cannot be found in the cited chunk, so looking only at the final
 response would hide invalid spans. No LLM judge is used here; every decision is
 deterministic Python code.
+
+A raw citation quote must also be at least :data:`MIN_QUOTE_CHARS` characters
+long after stripping, because a very short quote gives no evidence that the
+model grounded a real span.
 """
 
 from __future__ import annotations
@@ -23,6 +27,7 @@ from rag_engine.retrieval.retriever import RetrievedChunk
 
 __all__: list[str] = [
     "ANSWER_EVAL_SCHEMA_VERSION",
+    "MIN_QUOTE_CHARS",
     "SELECTION_METHOD",
     "AnswerGrade",
     "EvalContext",
@@ -37,6 +42,7 @@ __all__: list[str] = [
 ]
 
 ANSWER_EVAL_SCHEMA_VERSION: int = 1
+MIN_QUOTE_CHARS: int = 20
 SELECTION_METHOD: str = "random.Random(seed).sample(sorted(set(query_ids)), n), returned sorted"
 
 
@@ -273,6 +279,10 @@ def grade_answer(
             continue
         context = contexts[chunk_index]
         if not quote.strip():
+            continue
+        # Short strings such as "the" or "BDNF" show up in a context by chance, so a
+        # match on them is not evidence that the model grounded a real span.
+        if len(quote.strip()) < MIN_QUOTE_CHARS:
             continue
         if quote not in context.text:
             continue

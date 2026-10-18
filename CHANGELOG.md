@@ -6,6 +6,9 @@ All notable changes to this project are documented here. The format follows
 
 ## [Unreleased]
 
+### Changed
+- Answer eval (Chad's M5 review MINORs): a raw citation quote must be at least `MIN_QUOTE_CHARS` (20) characters after trimming whitespace to count as a valid span; `rag_engine.eval.intervals.wilson_interval` and `scripts/answer_eval_table.py` render every README rate with its raw count and a 95% Wilson interval, recomputed from per-item grades and checked against the report's metrics; README states that correct abstention (8/10) is a lower bound and that citation recall counts only the 17 answerable claims with gold retrieved. An offline replay of the committed cache under the new rule (2026-10-18, 30 cache hits, 0 API calls) reproduced every per-item grade, so the published numbers are unchanged.
+
 ### Added
 - First recorded M5 answer eval (`evals/results/answers_scifact_test_cline-pass_deepseek-v4.1-flash_20261013T013347Z.json`, cache under `evals/answers/`): 30 seeded SciFact test claims, `cline-pass/deepseek-v4.1-flash`, run 2026-10-13 at `c55a2bb`. Code-graded: span validity 29/30, citation recall 0.71 (17 eligible), precision 18/29, false abstention 4/17, correct abstention 8/10. README section with small-sample caveats.
 - M5 answer eval (code-graded): `rag_engine.eval.answers` (fixed-seed subset selection, raw-reply parsing, citation span validity, citation recall/precision vs qrels gold, abstention grading, aggregation), `rag_engine.eval.answer_cache` (request-keyed JSONL reply cache and `CachedAnswerGenerator` with record/replay modes), `rag_engine.eval.answer_runner` (gold-removal `no_relevant` items with exactly k contexts, run loop, report), and box-only `scripts/answer_eval.py`. The OpenAI-compatible client now unwraps `{"data": {...}}` gateway envelopes (Cline).

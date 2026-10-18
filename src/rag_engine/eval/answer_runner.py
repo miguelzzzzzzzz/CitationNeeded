@@ -22,6 +22,7 @@ from rag_engine.answering.models import AnswerResponse
 from rag_engine.eval.answer_cache import CachedAnswerGenerator, CacheMissError
 from rag_engine.eval.answers import (
     ANSWER_EVAL_SCHEMA_VERSION,
+    MIN_QUOTE_CHARS,
     SELECTION_METHOD,
     AnswerGrade,
     EvalContext,
@@ -253,8 +254,9 @@ def build_answer_report(
         "question_template": QUESTION_TEMPLATE,
         "config": dict(config),
         "grading": (
-            "code-only: citation span validity, citation recall/precision vs qrels gold docs, "
-            "abstention; no LLM judge"
+            "code-only: citation span validity (verbatim quote of >= "
+            f"{MIN_QUOTE_CHARS} chars after trimming whitespace), citation recall/precision "
+            "vs qrels gold docs, abstention; no LLM judge"
         ),
         "n_cache_hits": n_cache_hits,
         "n_api_calls": n_api_calls,

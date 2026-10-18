@@ -66,6 +66,13 @@ Short-horizon task list. Milestones and acceptance criteria live in `PLAN.md`.
 - [ ] Optional: secondary DeepSeek judge score, labelled self-graded (not started)
 - [ ] Optional: extractive-generator baseline on the same subset for comparison
 
+## Review of M5 answer eval at 67eecad (done 2026-10-18)
+- [x] 20-character minimum for valid citation quotes (`MIN_QUOTE_CHARS`) with boundary tests
+- [x] README: correct abstention 8/10 described as a lower bound (incomplete qrels)
+- [x] README: citation recall counts only the 17 answerable claims with gold retrieved
+- [x] Every README rate shows raw count + 95% Wilson interval (`scripts/answer_eval_table.py`)
+- [x] Offline cache replay under the new rule: every per-item grade unchanged (2026-10-18)
+
 ## M6 - FastAPI service (next)
 - [ ] FastAPI service exposing retrieve/answer
 - [ ] Dockerfile + image build in CI
