@@ -12,8 +12,9 @@ schema-validated answers; and a reproducible evaluation harness so every
 design choice is backed by measured retrieval quality and latency.
 
 > **Status:** v0.1.0, a pre-1.0 interface release (see [PLAN.md](PLAN.md) and
-> [CHANGELOG.md](CHANGELOG.md)). M1–M5 (ingestion through cited answer
-> generation) are done; M1–M3 passed interface review ([REVIEW.md](REVIEW.md)).
+> [CHANGELOG.md](CHANGELOG.md)). M1–M6 (ingestion through cited answer
+> generation and the HTTP service with its Docker image) are done; M1–M3 passed
+> interface review ([REVIEW.md](REVIEW.md)).
 > Interfaces may still change before 1.0. SciFact quality numbers below come
 > from the committed fastembed report; hashing / structured reports under
 > `evals/results/` are harness/smoke checks only. Regenerate tables with
@@ -117,6 +118,66 @@ these keys bumps `schema_version`.
 `Xenova/ms-marco-MiniLM-L-6-v2` cross-encoder (~80 MB, CPU). `--embedder hashing`
 builds a fully offline index for testing. Which configuration retrieves best is
 measured by the M4 harness (`rag-engine evaluate`); see the SciFact table below.
+
+## HTTP API
+
+A FastAPI service serves one prebuilt index read-only
+([ADR-0007](docs/adr/0007-read-only-http-service.md)): build the index with
+`rag-engine index`, point `RAG_INDEX_DIR` at it, and start uvicorn. Rebuilding
+the index means restarting the service.
+
+```bash
+pip install -e ".[api,embeddings]"
+rag-engine index path/to/docs --corpus-id handbook --out index/
+RAG_INDEX_DIR=index uvicorn rag_engine.api.app:create_app --factory --port 8000
+```
+
+| Endpoint | Body | Returns |
+| --- | --- | --- |
+| `GET /health` | | 200 `{"status": "ok", "index_loaded": true, "chunks", "documents", "embedder", ...}` while an index is served; 503 with `detail` otherwise |
+| `POST /search` | `{"query", "k": 5, "mode": "hybrid", "fusion", "rrf_k", "weights", "candidates", "rerank", "filters"}` | `{"schema_version": 1, "query", "mode", "rerank", "hits": [...]}` |
+| `POST /answer` | the `/search` fields plus `"generator": "auto"`, `"max_sentences": 5` | the `AnswerResponse` JSON: `answer`, `citations` (doc/chunk id, character span, quote), `abstained`, `generator` |
+
+```bash
+curl -s localhost:8000/search -H 'Content-Type: application/json' \
+  -d '{"query": "how does reranking work", "k": 3, "mode": "hybrid", "filters": {"source": "guide.md"}}'
+curl -s localhost:8000/answer -H 'Content-Type: application/json' \
+  -d '{"query": "how does reranking work", "generator": "extractive"}'
+```
+
+Search hits have the same fields as `search --json` hits, except that
+`components` and `ranks` are always present (empty for a single retriever).
+Options follow the CLI's rules: `fusion`/`rrf_k`/`weights` need `mode:
+"hybrid"`, `candidates` needs hybrid or `rerank`, and `filters` maps a field to
+a value or an "any of" list. `rerank: true` uses the server's cross-encoder
+(`RAG_RERANK_MODEL`); clients cannot pick a model. `generator: "auto"` uses the
+OpenAI-compatible client when `RAG_LLM_BASE_URL` and `RAG_LLM_MODEL` are set and
+the extractive generator otherwise. Errors return `{"detail": ...}`: 422 for an
+invalid body, 400 for a valid request the server cannot serve (e.g.
+`"generator": "openai"` without `RAG_LLM_*`), 503 when no index is served or an
+optional dependency (fastembed) is missing, 502 when the answer generator fails.
+OpenAPI docs are at `/docs`.
+
+### Docker
+
+The image (`python:3.13-slim`, multi-stage, runs as uid 10001) serves the index
+mounted at `/data/index` and caches fastembed models under `/data/models`.
+Models download on first use, not at build time. With
+[compose.yaml](compose.yaml), put documents in `./corpus` and run:
+
+```bash
+docker compose run --rm index      # rag-engine index /corpus -> rag-index volume (fastembed)
+docker compose up -d api           # serves it read-only on :8000, read-only root filesystem
+```
+
+CI builds the image and runs [scripts/docker_smoke.sh](scripts/docker_smoke.sh):
+it builds a hashing-embedder index of `evals/structured/docs` inside the
+container, serves it from a read-only mount, checks every endpoint (dense,
+lexical and hybrid search, an extractive answer with citations, 422/400 errors),
+and checks that a container without an index answers 503 and fails its
+`HEALTHCHECK`. No model is downloaded in CI. CI only validates `compose.yaml`
+(`docker compose config`); the smoke test runs the equivalent `docker run`
+commands.
 
 ## Naming
 
@@ -231,7 +292,7 @@ How to read it:
 
 ```bash
 python -m venv .venv && . .venv/bin/activate
-pip install -e ".[dev]"
+pip install -e ".[dev,api]"
 ruff check . && ruff format --check . && mypy && pytest -m "not slow"
 ```
 

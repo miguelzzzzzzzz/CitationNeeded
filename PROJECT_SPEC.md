@@ -23,7 +23,8 @@ Goals
   Fusion (RRF) or weighted score fusion, with metadata filters.
 - Cross-encoder reranking as an optional second stage.
 - Answers that are structured (JSON schema) and cite the chunks they rely on.
-- A FastAPI service exposing ingest, search, and answer endpoints.
+- A FastAPI service exposing search, answer, and health endpoints over a
+  prebuilt index (indexing stays a batch CLI job; ADR-0007).
 - A reproducible evaluation harness reporting Recall@K, MRR@K, Hit Rate@K,
   nDCG@10, and per-stage latency, run against a public labeled dataset.
 - Runs end to end on a CPU laptop with zero paid API calls.
@@ -143,6 +144,6 @@ M7 hardening, docs, and release.
 ## 11. Deployment
 
 Container image (multi-stage, non-root) running uvicorn; configuration via
-`RAG_*` environment variables; index persisted to a mounted volume. Docker is
-not available on the development box, so the image build is validated in
-GitHub Actions.
+`RAG_*` environment variables; the index is built by `rag-engine index` into a
+volume and mounted read-only by the service (ADR-0007). The image build and an
+end-to-end smoke test (`scripts/docker_smoke.sh`) run in GitHub Actions.

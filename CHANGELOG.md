@@ -6,7 +6,14 @@ All notable changes to this project are documented here. The format follows
 
 ## [Unreleased]
 
+### Added
+- HTTP service (M6, ADR-0007): `rag_engine.api` with `GET /health`, `POST /search` and `POST /answer` (FastAPI, optional extra `api`; run `uvicorn rag_engine.api.app:create_app --factory`). Serves one prebuilt index read-only from `RAG_INDEX_DIR`; `/health` is 200 only while an index is served (503 with the reason otherwise), and a corrupt index stops startup. Request schemas reject unknown fields and enforce the CLI's option rules; errors map to 422/400/503/502, and a `ValueError` during retrieval stays a 500. `rerank: true` uses only the server's `RAG_RERANK_MODEL`. The framework-free `RagService` takes injectable reranker and generator factories, so tests use fakes and need no model. Validation errors do not echo the rejected input back (NaN/Infinity would make the error body invalid JSON).
+- `Dockerfile` (multi-stage, `python:3.13-slim`, non-root uid 10001, `HEALTHCHECK` on `/health`), `.dockerignore`, `compose.yaml` (`index` tool service + read-only `api`), and a CI `docker` job that builds the image, validates the compose file and runs `scripts/docker_smoke.sh` (hashing index built in the container, served from a read-only mount, every endpoint exercised, 503 and a failing `HEALTHCHECK` without an index).
+- `ServiceConfig` in `Settings` (`RAG_INDEX_DIR`, `RAG_RERANK_MODEL`).
+
 ### Changed
+- `rag_engine.retrieval.compose_retriever` and `rag_engine.answering.select_generator` now build the retriever stack and pick the answer generator for both the CLI and the service (previously duplicated in `cli.py`). The `openai`-without-settings error now reads "(or use the extractive generator)".
+- `.env.example` documents the LLM settings as live (they have been read since M5) and the new service settings.
 - Answer eval (Chad's M5 review MINORs): a raw citation quote must be at least `MIN_QUOTE_CHARS` (20) characters after trimming whitespace to count as a valid span; `rag_engine.eval.intervals.wilson_interval` and `scripts/answer_eval_table.py` render every README rate with its raw count and a 95% Wilson interval, recomputed from per-item grades and checked against the report's metrics; README states that correct abstention (8/10) is a lower bound and that citation recall counts only the 17 answerable claims with gold retrieved. An offline replay of the committed cache under the new rule (2026-10-18, 30 cache hits, 0 API calls) reproduced every per-item grade, so the published numbers are unchanged.
 
 ### Added

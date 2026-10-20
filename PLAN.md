@@ -9,7 +9,7 @@ Milestones are ordered; each ends with green CI and an updated CHANGELOG.
 | M3 | Hybrid fusion (RRF / weighted), metadata filters, cross-encoder reranking | done |
 | M4 | Evaluation harness (SciFact + structured-doc set), benchmark reports | done |
 | M5 | Answer generation: provider interface, extractive fallback, citations, structured output | done |
-| M6 | FastAPI service, Dockerfile, docker build in CI | planned |
+| M6 | FastAPI service, Dockerfile, docker build in CI | done |
 | M7 | Hardening: error handling, perf (batching, caching), docs, full release (v0.1.0 was the M1-M3 interface release) | planned |
 
 ## M1 - Infrastructure, ingestion, chunking
@@ -71,8 +71,18 @@ Acceptance
 
 ## M6 - Service and deployment
 
-- FastAPI endpoints: `POST /ingest`, `POST /search`, `POST /answer`, `GET /health`.
+- FastAPI endpoints: `POST /search`, `POST /answer`, `GET /health` over a
+  prebuilt, read-only index. `POST /ingest` was dropped from M6: indexing stays
+  a batch job (`rag-engine index`); see
+  [ADR-0007](docs/adr/0007-read-only-http-service.md).
 - Dockerfile (multi-stage, non-root), compose file, CI job building the image.
+
+Acceptance
+- Every endpoint tested in-process with real retrieval over a hashing index;
+  rerankers and LLM generators injected as fakes (no model or network in CI).
+- `POST /search` hits carry the same fields as `rag-engine search --json`.
+- CI builds the image and smoke-tests it: index built in the container, served
+  from a read-only mount, all endpoints exercised, 503 without an index.
 
 ## M7 - Hardening and release
 

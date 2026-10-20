@@ -73,6 +73,17 @@ Short-horizon task list. Milestones and acceptance criteria live in `PLAN.md`.
 - [x] Every README rate shows raw count + 95% Wilson interval (`scripts/answer_eval_table.py`)
 - [x] Offline cache replay under the new rule: every per-item grade unchanged (2026-10-18)
 
-## M6 - FastAPI service (next)
-- [ ] FastAPI service exposing retrieve/answer
-- [ ] Dockerfile + image build in CI
+## M6 - FastAPI service (done 2026-10-20, ADR-0007)
+- [x] `GET /health`, `POST /search`, `POST /answer` over a prebuilt read-only index (`RAG_INDEX_DIR`)
+- [x] Request schemas with the CLI's option rules; 422/400/503/502 error contract; injected reranker/generator factories
+- [x] Search hits match `rag-engine search --json` (parity test per mode)
+- [x] Dockerfile (multi-stage, non-root, HEALTHCHECK), `.dockerignore`, `compose.yaml`
+- [x] CI `docker` job: image build, compose config check, `scripts/docker_smoke.sh`
+- [x] `POST /ingest` dropped from M6: indexing stays a batch job (ADR-0007)
+
+## M7 - Hardening and release (next)
+- [ ] Startup warm-up of the query embedder / reranker (first loads are lazy and unsynchronized)
+- [ ] Structured request logging with latency per stage
+- [ ] Extractive answers: the first sentence of a chunk can include its Markdown heading lines (seen in the Docker smoke test); strip headings from extracted sentences
+- [ ] Run `compose.yaml` end to end once (CI only validates it)
+- [ ] v1.0.0 release notes, Chad's final REVIEW.md
