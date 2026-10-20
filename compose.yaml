@@ -1,0 +1,45 @@
+# Build an index from ./corpus, then serve it:
+#   docker compose run --rm index
+#   docker compose up -d api
+# The API mounts the index read-only; rebuild the index and restart api to reload.
+services:
+  api:
+    build: .
+    image: citation-needed:local
+    ports:
+      - "8000:8000"
+    environment:
+      # Optional OpenAI-compatible generator for POST /answer; empty = extractive only.
+      RAG_LLM_BASE_URL: ${RAG_LLM_BASE_URL:-}
+      RAG_LLM_MODEL: ${RAG_LLM_MODEL:-}
+      RAG_LLM_API_KEY: ${RAG_LLM_API_KEY:-}
+    volumes:
+      - rag-index:/data/index:ro
+      - rag-models:/data/models
+    read_only: true
+    tmpfs:
+      - /tmp
+    restart: unless-stopped
+
+  index:
+    profiles: ["tools"]
+    build: .
+    image: citation-needed:local
+    command:
+      - rag-engine
+      - index
+      - /corpus
+      - --out
+      - /data/index
+      - --embedder
+      - ${RAG_INDEX_EMBEDDER:-fastembed}
+      - --corpus-id
+      - ${RAG_CORPUS_ID:-corpus}
+    volumes:
+      - ${RAG_CORPUS_DIR:-./corpus}:/corpus:ro
+      - rag-index:/data/index
+      - rag-models:/data/models
+
+volumes:
+  rag-index:
+  rag-models:

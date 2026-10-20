@@ -23,6 +23,7 @@ htmlcov/
 # Generated artifacts (indexes, downloaded eval data, model caches)
 data/
 artifacts/
+/corpus/
 .cache/
 evals/datasets/
 evals/results/*.tmp.json

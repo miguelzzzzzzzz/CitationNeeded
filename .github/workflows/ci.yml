@@ -39,3 +39,24 @@ jobs:
         run: mypy
       - name: Pytest
         run: pytest -m "not slow" --cov --cov-report=term-missing
+
+  docker:
+    name: docker image build + smoke test
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: docker/setup-buildx-action@v3
+      - name: Build image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          push: false
+          load: true
+          tags: citation-needed:ci
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+      - name: Validate compose file
+        run: docker compose config --quiet
+      - name: Smoke test (hashing index, no model downloads)
+        run: bash scripts/docker_smoke.sh citation-needed:ci
