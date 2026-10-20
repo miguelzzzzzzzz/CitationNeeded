@@ -100,6 +100,25 @@ class LLMConfig(BaseModel):
     temperature: float = Field(default=0.0, ge=0)
 
 
+DEFAULT_RERANK_MODEL = "Xenova/ms-marco-MiniLM-L-6-v2"
+
+
+class ServiceConfig(BaseModel):
+    """HTTP service settings (M6, ``rag_engine.api``).
+
+    ``index_dir`` is the index directory written by ``rag-engine index`` that the
+    service loads once at startup and serves read-only. ``rerank_model`` is the
+    only cross-encoder a ``rerank: true`` request may use, so clients cannot make
+    the server download arbitrary models. Env vars: ``RAG_INDEX_DIR``,
+    ``RAG_RERANK_MODEL``.
+    """
+
+    model_config = ConfigDict(frozen=True, extra="forbid")
+
+    index_dir: str | None = None
+    rerank_model: str = Field(default=DEFAULT_RERANK_MODEL, min_length=1)
+
+
 class Settings(BaseModel):
     """Top-level settings object passed through the pipeline."""
 
@@ -109,6 +128,7 @@ class Settings(BaseModel):
     chunking: ChunkingConfig = ChunkingConfig()
     embedding: EmbeddingConfig = EmbeddingConfig()
     llm: LLMConfig = LLMConfig()
+    service: ServiceConfig = ServiceConfig()
 
     @classmethod
     def from_env(cls, environ: Mapping[str, str] | None = None) -> Settings:
@@ -121,6 +141,7 @@ class Settings(BaseModel):
         chunking: dict[str, str] = {}
         embedding: dict[str, str] = {}
         llm: dict[str, str] = {}
+        service: dict[str, str] = {}
         mapping = {
             "MAX_FILE_BYTES": (ingestion, "max_file_bytes"),
             "FOLLOW_SYMLINKS": (ingestion, "follow_symlinks"),
@@ -141,6 +162,8 @@ class Settings(BaseModel):
             "LLM_TIMEOUT_S": (llm, "timeout_s"),
             "LLM_MAX_TOKENS": (llm, "max_tokens"),
             "LLM_TEMPERATURE": (llm, "temperature"),
+            "INDEX_DIR": (service, "index_dir"),
+            "RERANK_MODEL": (service, "rerank_model"),
         }
         for suffix, (target, field) in mapping.items():
             value = env.get(ENV_PREFIX + suffix)
@@ -153,6 +176,7 @@ class Settings(BaseModel):
                 chunking=ChunkingConfig.model_validate(chunking),
                 embedding=EmbeddingConfig.model_validate(embedding),
                 llm=LLMConfig.model_validate(llm),
+                service=ServiceConfig.model_validate(service),
             )
         except ValidationError as exc:
             raise ValueError(f"invalid RAG_* configuration: {exc}") from exc
