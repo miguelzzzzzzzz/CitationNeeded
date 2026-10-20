@@ -9,13 +9,17 @@ from rag_engine.answering.models import (
     citation_from_provenance,
 )
 from rag_engine.answering.openai_client import OpenAICompatibleAnswerGenerator
+from rag_engine.answering.select import GENERATOR_CHOICES, GeneratorChoice, select_generator
 
 __all__ = [
     "ANSWER_SCHEMA_VERSION",
+    "GENERATOR_CHOICES",
     "AnswerGenerator",
     "AnswerResponse",
     "Citation",
     "ExtractiveAnswerGenerator",
+    "GeneratorChoice",
     "OpenAICompatibleAnswerGenerator",
     "citation_from_provenance",
+    "select_generator",
 ]

@@ -27,10 +27,7 @@ from typing import Any
 
 from pydantic import ValidationError
 
-from rag_engine.answering import (
-    ExtractiveAnswerGenerator,
-    OpenAICompatibleAnswerGenerator,
-)
+from rag_engine.answering import select_generator
 from rag_engine.chunking import chunk_documents, chunk_stats
 from rag_engine.config import ChunkingConfig, IngestionConfig, Settings
 from rag_engine.documents import (
@@ -46,11 +43,11 @@ from rag_engine.retrieval import (
     CrossEncoderReranker,
     DenseRetriever,
     FusionMethod,
-    HybridRetriever,
     LexicalRetriever,
-    RerankingRetriever,
+    Reranker,
     RetrievedChunk,
     Retriever,
+    compose_retriever,
     embedder_from_spec,
     load_index,
     save_index,
@@ -668,32 +665,21 @@ def cmd_search(args: argparse.Namespace) -> int:
         print(f"error: {exc}", file=sys.stderr)
         return 2
 
-    retriever: Retriever = dense
     try:
-        # Both the hybrid retriever and the reranker validate their arguments in
+        # The hybrid retriever and the reranker validate their arguments in
         # their constructors, so they share one ValueError -> exit 2 handler.
-        if args.mode == "lexical":
-            retriever = lexical
-        elif args.mode == "hybrid":
-            retriever = HybridRetriever(
-                [dense, lexical],
-                method=method,
-                weights=weights,
-                rrf_k=rrf_k,
-                candidates=candidates,
-            )
-        if args.rerank:
-            # The cross-encoder loads lazily on the first retrieve call, so a
-            # missing fastembed surfaces as an ImportError below, like the embedder.
-            retriever = RerankingRetriever(
-                retriever,
-                CrossEncoderReranker(
-                    args.rerank_model,
-                    cache_dir=settings.embedding.cache_dir,
-                    threads=settings.embedding.threads,
-                ),
-                candidates=candidates,
-            )
+        # The cross-encoder loads lazily on the first retrieve call, so a missing
+        # fastembed surfaces as an ImportError below, like the embedder.
+        retriever = compose_retriever(
+            dense,
+            lexical,
+            mode=args.mode,
+            fusion=method,
+            weights=weights,
+            rrf_k=rrf_k,
+            candidates=candidates,
+            reranker=_cli_reranker(args, settings),
+        )
     except ValueError as exc:
         print(f"error: {exc}", file=sys.stderr)
         return 2
@@ -818,53 +804,26 @@ def _build_retriever_for_answer(args: argparse.Namespace, settings: Settings) ->
         raise ValueError("at least one weight must be positive")
     weights: Mapping[str, float] | None = parsed_weights or None
 
-    retriever: Retriever = dense
-    if args.mode == "lexical":
-        retriever = lexical
-    elif args.mode == "hybrid":
-        retriever = HybridRetriever(
-            [dense, lexical],
-            method=method,
-            weights=weights,
-            rrf_k=rrf_k,
-            candidates=candidates,
-        )
-    if args.rerank:
-        retriever = RerankingRetriever(
-            retriever,
-            CrossEncoderReranker(
-                args.rerank_model,
-                cache_dir=settings.embedding.cache_dir,
-                threads=settings.embedding.threads,
-            ),
-            candidates=candidates,
-        )
-    return retriever
+    return compose_retriever(
+        dense,
+        lexical,
+        mode=args.mode,
+        fusion=method,
+        weights=weights,
+        rrf_k=rrf_k,
+        candidates=candidates,
+        reranker=_cli_reranker(args, settings),
+    )
 
 
-def _select_answer_generator(
-    args: argparse.Namespace, settings: Settings
-) -> ExtractiveAnswerGenerator | OpenAICompatibleAnswerGenerator:
-    """Resolve extractive vs openai from --generator and RAG_LLM_* settings."""
-    choice = args.generator
-    llm = settings.llm
-    openai_ready = bool(llm.base_url and llm.model)
-    if choice == "auto":
-        choice = "openai" if openai_ready else "extractive"
-    if choice == "extractive":
-        return ExtractiveAnswerGenerator()
-    if not openai_ready:
-        raise ValueError(
-            "openai generator requires RAG_LLM_BASE_URL and RAG_LLM_MODEL "
-            "(or pass --generator extractive)"
-        )
-    return OpenAICompatibleAnswerGenerator(
-        base_url=llm.base_url or "",
-        model=llm.model or "",
-        api_key=llm.api_key,
-        timeout_s=llm.timeout_s,
-        max_tokens=llm.max_tokens,
-        temperature=llm.temperature,
+def _cli_reranker(args: argparse.Namespace, settings: Settings) -> Reranker | None:
+    """The cross-encoder for ``--rerank`` (lazy: no model load until first use)."""
+    if not args.rerank:
+        return None
+    return CrossEncoderReranker(
+        args.rerank_model,
+        cache_dir=settings.embedding.cache_dir,
+        threads=settings.embedding.threads,
     )
 
 
@@ -887,7 +846,7 @@ def cmd_answer(args: argparse.Namespace) -> int:
         return 2
     try:
         retriever = _build_retriever_for_answer(args, settings)
-        generator = _select_answer_generator(args, settings)
+        generator = select_generator(args.generator, settings.llm)
         hits = retriever.retrieve(args.query, args.top_k, filters or None)
         response = generator.generate(args.query, hits, max_sentences=args.max_sentences)
     except (ValueError, ImportError) as exc:

@@ -1,6 +1,7 @@
 """Retrieval: embedders, indexes, retrievers, hybrid fusion, reranking, persistence."""
 
 from rag_engine.retrieval.bm25 import BM25Index, tokenize
+from rag_engine.retrieval.compose import RETRIEVAL_MODES, RetrievalMode, compose_retriever
 from rag_engine.retrieval.embedders import Embedder, HashingEmbedder, l2_normalize
 from rag_engine.retrieval.fastembed_embedder import FastEmbedEmbedder
 from rag_engine.retrieval.fusion import (
@@ -26,6 +27,7 @@ from rag_engine.retrieval.vector_store import (
 )
 
 __all__ = [
+    "RETRIEVAL_MODES",
     "BM25Index",
     "CrossEncoderReranker",
     "DenseRetriever",
@@ -39,10 +41,12 @@ __all__ = [
     "LexicalRetriever",
     "Reranker",
     "RerankingRetriever",
+    "RetrievalMode",
     "RetrievedChunk",
     "Retriever",
     "SearchHit",
     "VectorStore",
+    "compose_retriever",
     "embedder_from_spec",
     "l2_normalize",
     "load_index",
