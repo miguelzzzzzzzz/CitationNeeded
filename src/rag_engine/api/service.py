@@ -19,12 +19,20 @@ Error contract (mapped to HTTP status codes in :mod:`rag_engine.api.app`):
 
 Anything else is a server error (500): a ``ValueError`` raised *during*
 retrieval, for example, points at the index or the code, not at the request.
+
+``search`` and ``answer`` accept an optional ``timings`` dict that they fill
+with per-stage wall-clock milliseconds (``retrieve_ms``, ``generate_ms``), also
+when the stage fails; the app logs it with each request. :meth:`RagService.warm_up`
+loads the models named by ``RAG_WARMUP`` before the first request.
 """
 
 from __future__ import annotations
 
+import logging
 import threading
-from collections.abc import Callable
+import time
+from collections.abc import Callable, Iterator
+from contextlib import contextmanager
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -61,6 +69,11 @@ __all__ = [
     "ServedIndex",
 ]
 
+logger = logging.getLogger("rag_engine.api")
+
+WARMUP_QUERY = "warm-up query"
+WARMUP_PASSAGE = "warm-up passage"
+
 RerankerFactory = Callable[[str], Reranker]
 GeneratorFactory = Callable[[str], AnswerGenerator]
 
@@ -79,6 +92,17 @@ class InvalidRequestError(ValueError):
 
 class GenerationError(RuntimeError):
     """The answer generator failed after retrieval succeeded."""
+
+
+@contextmanager
+def _timed(timings: dict[str, float] | None, stage: str) -> Iterator[None]:
+    """Record the stage's wall-clock milliseconds in ``timings``, even on failure."""
+    start = time.perf_counter()
+    try:
+        yield
+    finally:
+        if timings is not None:
+            timings[stage] = round((time.perf_counter() - start) * 1000, 3)
 
 
 @dataclass(frozen=True)
@@ -179,8 +203,43 @@ class RagService:
             documents=index.documents,
         )
 
-    def search(self, request: SearchRequest) -> SearchResponse:
-        hits = self._retrieve(request)
+    def warm_up(self) -> dict[str, float]:
+        """Load the models selected by ``settings.service.warmup`` now.
+
+        Returns the milliseconds each component took to warm up. Without an
+        index, or with ``warmup="off"``, nothing is loaded. A component that
+        fails to warm up (fastembed missing, model download failing) is logged
+        and skipped rather than aborting startup: the same load is retried
+        lazily by the first request that needs it, which then reports the
+        error with its usual status code.
+        """
+        mode = self._settings.service.warmup
+        index = self._index
+        done: dict[str, float] = {}
+        if mode == "off" or index is None:
+            return done
+        steps: list[tuple[str, Callable[[], object]]] = [
+            ("embedder", lambda: index.dense.embedder.embed_query(WARMUP_QUERY))
+        ]
+        if mode == "all":
+            steps.append(
+                ("reranker", lambda: self._shared_reranker().score(WARMUP_QUERY, [WARMUP_PASSAGE]))
+            )
+        for name, step in steps:
+            start = time.perf_counter()
+            try:
+                step()
+            except Exception as exc:
+                logger.warning("warm-up of the %s failed, it loads on first use: %s", name, exc)
+                continue
+            done[name] = round((time.perf_counter() - start) * 1000, 3)
+            logger.info("warm-up: %s ready in %.1f ms", name, done[name])
+        return done
+
+    def search(
+        self, request: SearchRequest, *, timings: dict[str, float] | None = None
+    ) -> SearchResponse:
+        hits = self._retrieve(request, timings)
         return SearchResponse(
             query=request.query,
             mode=request.mode,
@@ -188,22 +247,27 @@ class RagService:
             hits=[SearchHit.from_hit(hit) for hit in hits],
         )
 
-    def answer(self, request: AnswerRequest) -> AnswerResponse:
+    def answer(
+        self, request: AnswerRequest, *, timings: dict[str, float] | None = None
+    ) -> AnswerResponse:
         # Resolve the generator first: a request it cannot serve fails before
         # any retrieval work is spent on it.
         try:
             generator = self._generator_factory(request.generator)
         except ValueError as exc:
             raise InvalidRequestError(str(exc)) from exc
-        hits = self._retrieve(request)
+        hits = self._retrieve(request, timings)
         try:
-            return generator.generate(request.query, hits, max_sentences=request.max_sentences)
+            with _timed(timings, "generate_ms"):
+                return generator.generate(request.query, hits, max_sentences=request.max_sentences)
         except (ValueError, RuntimeError) as exc:
             # The request was validated already, so a failure here comes from
             # the backend (unreachable endpoint, unusable model output).
             raise GenerationError(f"answer generation failed: {exc}") from exc
 
-    def _retrieve(self, options: RetrievalOptions) -> list[RetrievedChunk]:
+    def _retrieve(
+        self, options: RetrievalOptions, timings: dict[str, float] | None = None
+    ) -> list[RetrievedChunk]:
         index = self._index
         if index is None:
             raise IndexNotLoadedError(self._unavailable_reason)
@@ -225,16 +289,18 @@ class RagService:
             # The schema mirrors the constructors' checks; this is a backstop.
             raise InvalidRequestError(str(exc)) from exc
         try:
-            return retriever.retrieve(options.query, options.k, options.filters)
+            with _timed(timings, "retrieve_ms"):
+                return retriever.retrieve(options.query, options.k, options.filters)
         except ImportError as exc:
             raise DependencyMissingError(str(exc)) from exc
 
     def _shared_reranker(self) -> Reranker:
         """One reranker instance per service, so the model is not reloaded per request.
 
-        The model itself still loads lazily on the first rerank; that load is not
-        synchronized, so concurrent first requests may each load it once (results
-        are unaffected). The same holds for a fastembed query embedder.
+        The model itself loads lazily on the first rerank (or at startup with
+        ``RAG_WARMUP=all``). The fastembed adapters serialize that first load,
+        so concurrent first requests wait for one model instead of each loading
+        their own; the same holds for a fastembed query embedder.
         """
         with self._reranker_lock:
             if self._reranker is None:

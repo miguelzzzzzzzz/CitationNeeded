@@ -2,13 +2,18 @@
 #   docker compose run --rm index
 #   docker compose up -d api
 # The API mounts the index read-only; rebuild the index and restart api to reload.
+# The API has no authentication, so it is published on 127.0.0.1 only; put an
+# authenticating reverse proxy in front of it before exposing it further.
 services:
   api:
     build: .
     image: citation-needed:local
     ports:
-      - "8000:8000"
+      - "127.0.0.1:8000:8000"
     environment:
+      # Load models at startup instead of on the first request: off | embedder | all.
+      RAG_WARMUP: ${RAG_WARMUP:-off}
+      RAG_LOG_LEVEL: ${RAG_LOG_LEVEL:-INFO}
       # Optional OpenAI-compatible generator for POST /answer; empty = extractive only.
       RAG_LLM_BASE_URL: ${RAG_LLM_BASE_URL:-}
       RAG_LLM_MODEL: ${RAG_LLM_MODEL:-}

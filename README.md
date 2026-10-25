@@ -158,6 +158,31 @@ invalid body, 400 for a valid request the server cannot serve (e.g.
 optional dependency (fastembed) is missing, 502 when the answer generator fails.
 OpenAPI docs are at `/docs`.
 
+**There is no authentication.** Anyone who can reach the port can query the
+index and, with `RAG_LLM_*` set, spend LLM calls. Keep it on localhost or a
+trusted network, or put an authenticating reverse proxy in front of it;
+`compose.yaml` publishes the port on `127.0.0.1` only.
+
+Models load lazily on the first request that needs them; the fastembed adapters
+serialize that first load, so concurrent first requests share one model.
+`RAG_WARMUP=embedder` embeds one probe query at startup (and `all` also scores
+one pair with the reranker, downloading it if needed), so the first real
+request does not pay the load and the Docker `HEALTHCHECK` turns healthy only
+once the models are warm. A warm-up that fails (e.g. no network for the
+download) is logged and the model loads on first use instead.
+
+Each response carries an `X-Request-ID` header, and each request is logged as
+one JSON line on the `rag_engine.api.requests` logger (`RAG_LOG_LEVEL`, default
+`INFO`; `/health` at `DEBUG`):
+
+```text
+INFO rag_engine.api.requests {"duration_ms": 2.353, "event": "request", "method": "POST", "path": "/search", "request_id": "84042302d3e34cd09e50a6b95354f53a", "retrieve_ms": 0.062, "status": 200}
+```
+
+`retrieve_ms` covers retrieval (fusion and reranking included) and
+`generate_ms` the answer generator; query text is never logged. The Docker image
+turns off uvicorn's access log in favour of these lines.
+
 ### Docker
 
 The image (`python:3.13-slim`, multi-stage, runs as uid 10001) serves the index
@@ -167,13 +192,14 @@ Models download on first use, not at build time. With
 
 ```bash
 docker compose run --rm index      # rag-engine index /corpus -> rag-index volume (fastembed)
-docker compose up -d api           # serves it read-only on :8000, read-only root filesystem
+docker compose up -d api           # serves it read-only on 127.0.0.1:8000, read-only root filesystem
 ```
 
 CI builds the image and runs [scripts/docker_smoke.sh](scripts/docker_smoke.sh):
 it builds a hashing-embedder index of `evals/structured/docs` inside the
 container, serves it from a read-only mount, checks every endpoint (dense,
 lexical and hybrid search, an extractive answer with citations, 422/400 errors),
+checks the startup warm-up and the JSON request log line (with no query text),
 and checks that a container without an index answers 503 and fails its
 `HEALTHCHECK`. No model is downloaded in CI. CI only validates `compose.yaml`
 (`docker compose config`); the smoke test runs the equivalent `docker run`

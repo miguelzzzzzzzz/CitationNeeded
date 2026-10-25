@@ -11,6 +11,7 @@ pairs in one model call, and returns the top ``k``.
 from __future__ import annotations
 
 import math
+import threading
 from collections.abc import Iterable, Sequence
 from typing import Protocol
 
@@ -66,25 +67,31 @@ class CrossEncoderReranker:
         self.cache_dir = cache_dir
         self.threads = threads
         self._model = model
+        # Serializes the first load so concurrent first requests load one model.
+        self._load_lock = threading.Lock()
 
     @property
     def name(self) -> str:
         return f"cross-encoder:{self.model_name}"
 
     def _load(self) -> CrossEncoderModel:
-        if self._model is None:
-            try:
-                from fastembed.rerank.cross_encoder import TextCrossEncoder
-            except ImportError as exc:  # pragma: no cover - depends on install
-                raise ImportError(
-                    "fastembed is not installed; run: pip install -e '.[embeddings]'"
-                ) from exc
-            self._model = TextCrossEncoder(
-                model_name=self.model_name,
-                cache_dir=self.cache_dir,
-                threads=self.threads,
-            )
-        return self._model
+        model = self._model
+        if model is not None:
+            return model
+        with self._load_lock:
+            if self._model is None:
+                try:
+                    from fastembed.rerank.cross_encoder import TextCrossEncoder
+                except ImportError as exc:
+                    raise ImportError(
+                        "fastembed is not installed; run: pip install -e '.[embeddings]'"
+                    ) from exc
+                self._model = TextCrossEncoder(
+                    model_name=self.model_name,
+                    cache_dir=self.cache_dir,
+                    threads=self.threads,
+                )
+            return self._model
 
     def score(self, query: str, texts: Sequence[str]) -> list[float]:
         if not texts:

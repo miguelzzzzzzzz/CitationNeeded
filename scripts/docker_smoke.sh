@@ -1,7 +1,8 @@
 #!/usr/bin/env bash
 # Smoke-test a built image end to end: build an index with the offline hashing
 # embedder from evals/structured/docs, serve it read-only, and exercise
-# /health, /search (dense, lexical, hybrid), /answer and request validation.
+# /health, /search (dense, lexical, hybrid), /answer and request validation,
+# plus the startup warm-up and the per-request JSON log lines.
 # Also checks that a container without an index reports 503 / unhealthy.
 # Usage: scripts/docker_smoke.sh [IMAGE]   (default: citation-needed:ci)
 set -euo pipefail
@@ -50,9 +51,9 @@ docker volume create "$VOLUME" >/dev/null
 docker run --rm -v "$DOCS:/corpus:ro" -v "$VOLUME:/data/index" "$IMAGE" \
     rag-engine index /corpus --out /data/index --embedder hashing --corpus-id structured-eval
 
-echo "== serve it read-only"
+echo "== serve it read-only (with the embedder warm-up)"
 docker run -d --name "$API" --read-only --tmpfs /tmp -p "127.0.0.1:$PORT:8000" \
-    -v "$VOLUME:/data/index:ro" "$IMAGE" >/dev/null
+    -e RAG_WARMUP=embedder -v "$VOLUME:/data/index:ro" "$IMAGE" >/dev/null
 wait_health "$API" healthy
 health="$(curl -fsS "$BASE/health")"
 echo "$health"
@@ -73,6 +74,20 @@ code="$(post /answer '{"query": "How does quicksort choose a pivot?", "generator
 jq -e '.abstained == false and (.citations | length) > 0' /tmp/body.json >/dev/null \
     || fail "/answer did not cite: $(cat /tmp/body.json)"
 jq -c '{answer: .answer[:120], first_citation: .citations[0].source}' /tmp/body.json
+
+echo "== request ids and structured request logs"
+request_id="$(curl -sS -o /dev/null -D - -H 'Content-Type: application/json' \
+    -d '{"query": "quicksort pivot partition", "mode": "lexical"}' "$BASE/search" \
+    | tr -d '\r' | awk 'tolower($1) == "x-request-id:" {print $2}')"
+[ "${#request_id}" = 32 ] || fail "missing X-Request-ID header: '$request_id'"
+logs="$(docker logs "$API" 2>&1)"
+grep -q 'warm-up: embedder ready' <<<"$logs" || fail "no warm-up line in the logs"
+line="$(grep -F "\"request_id\": \"$request_id\"" <<<"$logs" | sed 's/^[^{]*//' || true)"
+[ -n "$line" ] || fail "no log line for request $request_id"
+echo "$line"
+echo "$line" | jq -e '.path == "/search" and .status == 200 and .retrieve_ms >= 0' >/dev/null \
+    || fail "unexpected request log line"
+if grep -q 'quicksort pivot' <<<"$logs"; then fail "query text leaked into the logs"; fi
 
 echo "== invalid requests"
 [ "$(post /search '{"query": "x", "k": 0}')" = 422 ] || fail "k=0 not rejected"

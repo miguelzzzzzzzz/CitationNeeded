@@ -38,4 +38,8 @@ EXPOSE 8000
 # 200 only while an index is served (503 otherwise), so "healthy" means ready.
 HEALTHCHECK --interval=30s --timeout=5s --start-period=20s --start-interval=2s --retries=3 \
     CMD ["python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/health', timeout=4)"]
-CMD ["uvicorn", "rag_engine.api.app:create_app", "--factory", "--host", "0.0.0.0", "--port", "8000"]
+# The app logs one JSON line per request (rag_engine.api.requests), which
+# replaces uvicorn's access log. No authentication: publish the port only on a
+# trusted interface (compose.yaml binds 127.0.0.1) or behind an auth proxy.
+CMD ["uvicorn", "rag_engine.api.app:create_app", "--factory", "--host", "0.0.0.0", "--port", "8000", \
+     "--no-access-log"]

@@ -9,6 +9,7 @@ and cached in ``cache_dir``.
 
 from __future__ import annotations
 
+import threading
 from collections.abc import Iterable, Sequence
 from typing import Any, Protocol
 
@@ -65,6 +66,9 @@ class FastEmbedEmbedder:
         self.config = config or EmbeddingConfig()
         self._model = model
         self._dimension = dimension
+        # Serializes the first load: concurrent first queries (e.g. API worker
+        # threads) must not each construct the model.
+        self._load_lock = threading.Lock()
 
     @property
     def name(self) -> str:
@@ -80,19 +84,23 @@ class FastEmbedEmbedder:
         return self._dimension
 
     def _load(self) -> TextEmbeddingModel:
-        if self._model is None:
-            try:
-                from fastembed import TextEmbedding
-            except ImportError as exc:  # pragma: no cover - depends on install
-                raise ImportError(
-                    "fastembed is not installed; run: pip install -e '.[embeddings]'"
-                ) from exc
-            self._model = TextEmbedding(
-                model_name=self.config.model_name,
-                cache_dir=self.config.cache_dir,
-                threads=self.config.threads,
-            )
-        return self._model
+        model = self._model
+        if model is not None:
+            return model
+        with self._load_lock:
+            if self._model is None:
+                try:
+                    from fastembed import TextEmbedding
+                except ImportError as exc:
+                    raise ImportError(
+                        "fastembed is not installed; run: pip install -e '.[embeddings]'"
+                    ) from exc
+                self._model = TextEmbedding(
+                    model_name=self.config.model_name,
+                    cache_dir=self.config.cache_dir,
+                    threads=self.config.threads,
+                )
+            return self._model
 
     def _embed_batch(self, texts: Sequence[str], *, query: bool) -> Matrix:
         model = self._load()

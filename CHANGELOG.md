@@ -7,6 +7,16 @@ All notable changes to this project are documented here. The format follows
 ## [Unreleased]
 
 ### Added
+- Service hardening (M7): opt-in startup warm-up `RAG_WARMUP=off|embedder|all` (`RagService.warm_up`, run before the first request is accepted; a failed warm-up is logged and the model loads on first use); one JSON log line per request on `rag_engine.api.requests` (request id, method, path, status, `duration_ms`, `retrieve_ms`, `generate_ms`; no query text; `/health` at DEBUG) and an `X-Request-ID` response header; `RAG_LOG_LEVEL`. The Docker smoke test checks the warm-up and request log lines.
+
+### Changed
+- The fastembed embedder and cross-encoder serialize their lazy first model load with a lock, so concurrent first requests construct one model instead of one each.
+- `compose.yaml` publishes the API on `127.0.0.1:8000` only, and the README and Dockerfile state that the service has no authentication. The image runs uvicorn with `--no-access-log` (the request log lines replace it).
+
+### Fixed
+- Under uvicorn the service's own INFO log lines (e.g. "serving index") were dropped because nothing configured a handler for `rag_engine`; the app now adds a stderr handler when neither the root logger nor `rag_engine` has one.
+
+### Added
 - HTTP service (M6, ADR-0007): `rag_engine.api` with `GET /health`, `POST /search` and `POST /answer` (FastAPI, optional extra `api`; run `uvicorn rag_engine.api.app:create_app --factory`). Serves one prebuilt index read-only from `RAG_INDEX_DIR`; `/health` is 200 only while an index is served (503 with the reason otherwise), and a corrupt index stops startup. Request schemas reject unknown fields and enforce the CLI's option rules; errors map to 422/400/503/502, and a `ValueError` during retrieval stays a 500. `rerank: true` uses only the server's `RAG_RERANK_MODEL`. The framework-free `RagService` takes injectable reranker and generator factories, so tests use fakes and need no model. Validation errors do not echo the rejected input back (NaN/Infinity would make the error body invalid JSON).
 - `Dockerfile` (multi-stage, `python:3.13-slim`, non-root uid 10001, `HEALTHCHECK` on `/health`), `.dockerignore`, `compose.yaml` (`index` tool service + read-only `api`), and a CI `docker` job that builds the image, validates the compose file and runs `scripts/docker_smoke.sh` (hashing index built in the container, served from a read-only mount, every endpoint exercised, 503 and a failing `HEALTHCHECK` without an index).
 - `ServiceConfig` in `Settings` (`RAG_INDEX_DIR`, `RAG_RERANK_MODEL`).

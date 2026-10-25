@@ -81,9 +81,11 @@ Short-horizon task list. Milestones and acceptance criteria live in `PLAN.md`.
 - [x] CI `docker` job: image build, compose config check, `scripts/docker_smoke.sh`
 - [x] `POST /ingest` dropped from M6: indexing stays a batch job (ADR-0007)
 
-## M7 - Hardening and release (next)
-- [ ] Startup warm-up of the query embedder / reranker (first loads are lazy and unsynchronized)
-- [ ] Structured request logging with latency per stage
+## M7 - Hardening and release (in progress)
+- [x] Locked first model load in the fastembed embedder/reranker + opt-in `RAG_WARMUP=off|embedder|all` (2026-10-25)
+- [x] JSON request log line per request (request id, status, `duration_ms`, `retrieve_ms`, `generate_ms`; no query text) + `X-Request-ID`; `RAG_LOG_LEVEL` (2026-10-25)
+- [x] compose binds `127.0.0.1:8000:8000`; README/Dockerfile say there is no auth (2026-10-25)
+- [ ] Pin the Docker base image by digest
+- [ ] CI job: `docker compose up -d --wait` with a tiny prebuilt index, `scripts/docker_smoke.sh` against the stack, `docker compose down`; only then call compose tested in the README
 - [ ] Extractive answers: the first sentence of a chunk can include its Markdown heading lines (seen in the Docker smoke test); strip headings from extracted sentences
-- [ ] Run `compose.yaml` end to end once (CI only validates it)
 - [ ] v1.0.0 release notes, Chad's final REVIEW.md

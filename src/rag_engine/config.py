@@ -11,7 +11,7 @@ from __future__ import annotations
 import os
 from collections.abc import Mapping
 from enum import StrEnum
-from typing import Self
+from typing import Literal, Self
 
 from pydantic import BaseModel, ConfigDict, Field, ValidationError, field_validator, model_validator
 
@@ -109,14 +109,34 @@ class ServiceConfig(BaseModel):
     ``index_dir`` is the index directory written by ``rag-engine index`` that the
     service loads once at startup and serves read-only. ``rerank_model`` is the
     only cross-encoder a ``rerank: true`` request may use, so clients cannot make
-    the server download arbitrary models. Env vars: ``RAG_INDEX_DIR``,
-    ``RAG_RERANK_MODEL``.
+    the server download arbitrary models.
+
+    ``warmup`` (M7) loads models at startup instead of on the first request:
+    ``off`` (default) loads nothing early, ``embedder`` embeds one probe query
+    with the index's query embedder, ``all`` also scores one pair with the
+    reranker (downloading it if it is not cached). ``log_level`` sets the level
+    of the ``rag_engine`` loggers, including the per-request log lines.
+
+    Env vars: ``RAG_INDEX_DIR``, ``RAG_RERANK_MODEL``, ``RAG_WARMUP``,
+    ``RAG_LOG_LEVEL``.
     """
 
     model_config = ConfigDict(frozen=True, extra="forbid")
 
     index_dir: str | None = None
     rerank_model: str = Field(default=DEFAULT_RERANK_MODEL, min_length=1)
+    warmup: Literal["off", "embedder", "all"] = "off"
+    log_level: Literal["DEBUG", "INFO", "WARNING", "ERROR"] = "INFO"
+
+    @field_validator("warmup", mode="before")
+    @classmethod
+    def _lower(cls, value: object) -> object:
+        return value.lower() if isinstance(value, str) else value
+
+    @field_validator("log_level", mode="before")
+    @classmethod
+    def _upper(cls, value: object) -> object:
+        return value.upper() if isinstance(value, str) else value
 
 
 class Settings(BaseModel):
@@ -164,6 +184,8 @@ class Settings(BaseModel):
             "LLM_TEMPERATURE": (llm, "temperature"),
             "INDEX_DIR": (service, "index_dir"),
             "RERANK_MODEL": (service, "rerank_model"),
+            "WARMUP": (service, "warmup"),
+            "LOG_LEVEL": (service, "log_level"),
         }
         for suffix, (target, field) in mapping.items():
             value = env.get(ENV_PREFIX + suffix)
