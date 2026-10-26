@@ -10,6 +10,7 @@ All notable changes to this project are documented here. The format follows
 - Service hardening (M7): opt-in startup warm-up `RAG_WARMUP=off|embedder|all` (`RagService.warm_up`, run before the first request is accepted; a failed warm-up is logged and the model loads on first use); one JSON log line per request on `rag_engine.api.requests` (request id, method, path, status, `duration_ms`, `retrieve_ms`, `generate_ms`; no query text; `/health` at DEBUG) and an `X-Request-ID` response header; `RAG_LOG_LEVEL`. The Docker smoke test checks the warm-up and request log lines.
 
 ### Changed
+- The CI `docker` job also runs `scripts/compose_smoke.sh`: `docker compose run --rm index` builds a hashing-embedder index of `evals/structured/docs` (no model downloads) before `docker compose up -d --wait api` (the healthcheck is 503 until an index is served), checks that the API is published on `127.0.0.1:8000` with a read-only root filesystem and a read-only index mount, runs the same HTTP checks as the `docker run` smoke test (now shared in `scripts/smoke_lib.sh`), then `docker compose down -v`. `compose.yaml` takes the image name from `RAG_IMAGE` (default `citation-needed:local`).
 - The fastembed embedder and cross-encoder serialize their lazy first model load with a lock, so concurrent first requests construct one model instead of one each.
 - `compose.yaml` publishes the API on `127.0.0.1:8000` only, and the README and Dockerfile state that the service has no authentication. The image runs uvicorn with `--no-access-log` (the request log lines replace it).
 

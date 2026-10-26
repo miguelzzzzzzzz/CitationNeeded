@@ -1,5 +1,6 @@
 # Build an index from ./corpus, then serve it:
 #   docker compose run --rm index
+#   (RAG_CORPUS_DIR, RAG_INDEX_EMBEDDER, RAG_CORPUS_ID and RAG_IMAGE override the defaults)
 #   docker compose up -d api
 # The API mounts the index read-only; rebuild the index and restart api to reload.
 # The API has no authentication, so it is published on 127.0.0.1 only; put an
@@ -7,7 +8,7 @@
 services:
   api:
     build: .
-    image: citation-needed:local
+    image: ${RAG_IMAGE:-citation-needed:local}
     ports:
       - "127.0.0.1:8000:8000"
     environment:
@@ -29,7 +30,7 @@ services:
   index:
     profiles: ["tools"]
     build: .
-    image: citation-needed:local
+    image: ${RAG_IMAGE:-citation-needed:local}
     command:
       - rag-engine
       - index

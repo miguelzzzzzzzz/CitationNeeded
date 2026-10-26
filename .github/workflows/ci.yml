@@ -41,7 +41,7 @@ jobs:
         run: pytest -m "not slow" --cov --cov-report=term-missing
 
   docker:
-    name: docker image build + smoke test
+    name: docker image build + smoke tests (docker run, compose)
     runs-on: ubuntu-latest
     timeout-minutes: 30
     steps:
@@ -60,3 +60,5 @@ jobs:
         run: docker compose config --quiet
       - name: Smoke test (hashing index, no model downloads)
         run: bash scripts/docker_smoke.sh citation-needed:ci
+      - name: Compose smoke test (index first, then up --wait; no model downloads)
+        run: bash scripts/compose_smoke.sh citation-needed:ci
