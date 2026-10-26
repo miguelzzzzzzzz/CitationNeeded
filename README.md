@@ -201,9 +201,14 @@ container, serves it from a read-only mount, checks every endpoint (dense,
 lexical and hybrid search, an extractive answer with citations, 422/400 errors),
 checks the startup warm-up and the JSON request log line (with no query text),
 and checks that a container without an index answers 503 and fails its
-`HEALTHCHECK`. No model is downloaded in CI. CI only validates `compose.yaml`
-(`docker compose config`); the smoke test runs the equivalent `docker run`
-commands.
+`HEALTHCHECK`. CI also runs [scripts/compose_smoke.sh](scripts/compose_smoke.sh)
+on the same image: `docker compose run --rm index` builds the hashing index
+first (the healthcheck stays 503 until an index is served), then
+`docker compose up -d --wait api` must turn healthy; the script checks the
+`127.0.0.1:8000` binding, the read-only root filesystem and index mount, runs
+the same endpoint and log checks, and ends with `docker compose down -v`. No
+model is downloaded in CI, so the fastembed default of the `index` service is
+not exercised there (`RAG_INDEX_EMBEDDER=hashing`; `RAG_IMAGE` picks the image).
 
 ## Naming
 

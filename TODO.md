@@ -86,6 +86,6 @@ Short-horizon task list. Milestones and acceptance criteria live in `PLAN.md`.
 - [x] JSON request log line per request (request id, status, `duration_ms`, `retrieve_ms`, `generate_ms`; no query text) + `X-Request-ID`; `RAG_LOG_LEVEL` (2026-10-25)
 - [x] compose binds `127.0.0.1:8000:8000`; README/Dockerfile say there is no auth (2026-10-25)
 - [ ] Pin the Docker base image by digest
-- [ ] CI job: `docker compose up -d --wait` with a tiny prebuilt index, `scripts/docker_smoke.sh` against the stack, `docker compose down`; only then call compose tested in the README
+- [x] CI: `scripts/compose_smoke.sh` builds a tiny hashing index with the compose `index` service, then `docker compose up -d --wait api`, the shared smoke checks (`scripts/smoke_lib.sh`) and `docker compose down -v`; README now says compose is tested (2026-10-26, green at 17c3561)
 - [ ] Extractive answers: the first sentence of a chunk can include its Markdown heading lines (seen in the Docker smoke test); strip headings from extracted sentences
 - [ ] v1.0.0 release notes, Chad's final REVIEW.md
