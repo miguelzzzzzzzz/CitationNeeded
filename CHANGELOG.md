@@ -15,6 +15,7 @@ All notable changes to this project are documented here. The format follows
 - `compose.yaml` publishes the API on `127.0.0.1:8000` only, and the README and Dockerfile state that the service has no authentication. The image runs uvicorn with `--no-access-log` (the request log lines replace it).
 
 ### Fixed
+- Extractive answers no longer quote Markdown heading lines: for Markdown and HTML chunks (HTML headings are normalized to ATX lines), ATX heading lines are sentence boundaries and are dropped, so a chunk's first sentence is no longer `# Title\n\n## Section\n\nText...`. Sentence spans are now computed directly instead of re-found with `str.find`. Plain-text and PDF chunks are unchanged. The Docker and compose smoke tests check that no answer or quote contains a heading line.
 - Under uvicorn the service's own INFO log lines (e.g. "serving index") were dropped because nothing configured a handler for `rag_engine`; the app now adds a stderr handler when neither the root logger nor `rag_engine` has one.
 
 ### Added

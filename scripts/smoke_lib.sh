@@ -39,6 +39,9 @@ check_endpoints() {
     [ "$code" = 200 ] || fail "/answer returned $code: $(cat "$SMOKE_BODY")"
     jq -e '.abstained == false and (.citations | length) > 0' "$SMOKE_BODY" >/dev/null \
         || fail "/answer did not cite: $(cat "$SMOKE_BODY")"
+    # Markdown heading lines ("# Title") must not leak into extracted sentences.
+    jq -e '[.answer, .citations[].quote] | all(test("(^|\n) {0,3}#{1,6}[ \t]") | not)' \
+        "$SMOKE_BODY" >/dev/null || fail "/answer quoted a heading line: $(cat "$SMOKE_BODY")"
     jq -c '{answer: .answer[:120], first_citation: .citations[0].source}' "$SMOKE_BODY"
 
     echo "== invalid requests"

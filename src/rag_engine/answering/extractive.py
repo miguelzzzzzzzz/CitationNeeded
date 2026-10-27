@@ -2,6 +2,14 @@
 
 Sentences with the highest query-term overlap are selected from the retrieved
 chunks; no model calls, no network access, fully deterministic.
+
+Markdown and HTML chunks keep their ATX heading lines (``# Title``) in the
+chunk text (HTML headings are normalized to ATX at load time). For those
+formats heading lines are sentence boundaries and never part of a quote.
+Headings are found per chunk with the loader's fence-aware scanner, so a chunk
+that starts inside a fenced code block can take ``#`` comment lines in that
+block for headings and miss headings after its closing fence. Plain-text and
+PDF chunks are split on punctuation only.
 """
 
 from __future__ import annotations
@@ -12,6 +20,7 @@ from dataclasses import dataclass
 from typing import Any
 
 from rag_engine.answering.models import AnswerResponse, citation_from_provenance
+from rag_engine.ingestion.loaders import find_markdown_headings
 from rag_engine.retrieval.retriever import RetrievedChunk
 
 __all__ = ["ExtractiveAnswerGenerator"]
@@ -50,6 +59,8 @@ _STOPWORDS: frozenset[str] = frozenset(
 
 _TOKEN_RE = re.compile(r"[a-z0-9]+")
 _SENTENCE_RE = re.compile(r"(?<=[.!?])\s+")
+# Formats whose normalized text carries ATX heading lines (see loaders.py).
+_HEADING_FORMATS: frozenset[str] = frozenset({"markdown", "html"})
 _WHITESPACE_RE = re.compile(r"\s+")
 
 
@@ -62,9 +73,45 @@ def _tokenize(text: str) -> frozenset[str]:
     )
 
 
-def _split_sentences(text: str) -> list[str]:
-    """Split on sentence-final punctuation followed by whitespace."""
-    return [part.strip() for part in _SENTENCE_RE.split(text) if part.strip()]
+def _heading_line_spans(text: str) -> list[tuple[int, int]]:
+    """``(start, end)`` of every ATX heading line in ``text`` (end excludes the newline)."""
+    spans: list[tuple[int, int]] = []
+    for heading in find_markdown_headings(text):
+        end = text.find("\n", heading.offset)
+        spans.append((heading.offset, len(text) if end < 0 else end))
+    return spans
+
+
+def _sentence_spans(text: str, *, skip_headings: bool) -> list[tuple[int, int]]:
+    """Exact ``(start, end)`` spans of the sentences in ``text``, stripped of whitespace.
+
+    Sentences end at sentence-final punctuation followed by whitespace. With
+    ``skip_headings`` every ATX heading line is also a boundary and is dropped,
+    so no span contains a heading.
+    """
+    blocks: list[tuple[int, int]] = []
+    cursor = 0
+    if skip_headings:
+        for start, end in _heading_line_spans(text):
+            blocks.append((cursor, start))
+            cursor = end
+    blocks.append((cursor, len(text)))
+
+    spans: list[tuple[int, int]] = []
+    for block_start, block_end in blocks:
+        piece_start = block_start
+        block = text[block_start:block_end]
+        bounds = [(m.start(), m.end()) for m in _SENTENCE_RE.finditer(block)]
+        bounds.append((len(block), len(block)))
+        for gap_start, gap_end in bounds:
+            piece_end = block_start + gap_start
+            piece = text[piece_start:piece_end]
+            stripped = piece.strip()
+            if stripped:
+                lead = len(piece) - len(piece.lstrip())
+                spans.append((piece_start + lead, piece_start + lead + len(stripped)))
+            piece_start = block_start + gap_end
+    return spans
 
 
 def _dedupe_key(sentence: str) -> str:
@@ -134,13 +181,10 @@ class ExtractiveAnswerGenerator:
         candidates: list[_Candidate] = []
         for hit in hits:
             chunk = hit.chunk
-            # Per-chunk cursor so repeated sentences map to successive offsets.
-            cursor = 0
-            for offset, sentence in enumerate(_split_sentences(chunk.text)):
-                local = chunk.text.find(sentence, cursor)
-                if local < 0:  # pragma: no cover - defensive fallback
-                    local = cursor
-                cursor = local + len(sentence)
+            skip_headings = chunk.metadata.get("format") in _HEADING_FORMATS
+            spans = _sentence_spans(chunk.text, skip_headings=skip_headings)
+            for offset, (local, local_end) in enumerate(spans):
+                sentence = chunk.text[local:local_end]
                 overlap = len(query_tokens & _tokenize(sentence))
                 if overlap == 0:
                     continue
@@ -151,7 +195,7 @@ class ExtractiveAnswerGenerator:
                         offset=offset,
                         sentence=sentence,
                         start_char=chunk.start_char + local,
-                        end_char=chunk.start_char + local + len(sentence),
+                        end_char=chunk.start_char + local_end,
                         hit=hit,
                     )
                 )

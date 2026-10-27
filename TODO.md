@@ -87,5 +87,5 @@ Short-horizon task list. Milestones and acceptance criteria live in `PLAN.md`.
 - [x] compose binds `127.0.0.1:8000:8000`; README/Dockerfile say there is no auth (2026-10-25)
 - [ ] Pin the Docker base image by digest
 - [x] CI: `scripts/compose_smoke.sh` builds a tiny hashing index with the compose `index` service, then `docker compose up -d --wait api`, the shared smoke checks (`scripts/smoke_lib.sh`) and `docker compose down -v`; README now says compose is tested (2026-10-26, green at 17c3561)
-- [ ] Extractive answers: the first sentence of a chunk can include its Markdown heading lines (seen in the Docker smoke test); strip headings from extracted sentences
+- [x] Extractive answers: Markdown/HTML heading lines are sentence boundaries and never quoted (was: the first sentence of a chunk included its headings, seen in the Docker smoke test); smoke tests assert it (2026-10-27)
 - [ ] v1.0.0 release notes, Chad's final REVIEW.md
