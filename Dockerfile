@@ -2,7 +2,14 @@
 # Citation Needed HTTP service: GET /health, POST /search, POST /answer.
 # The image serves a prebuilt index (rag-engine index) mounted at /data/index.
 
-FROM python:3.13-slim AS builder
+# Base image pinned by the digest of its multi-arch index (resolved 2026-10-27),
+# so rebuilds use the same OS and Python layers. The tag stays for readability;
+# the digest wins. To refresh, resolve the current digest of python:3.13-slim
+# (e.g. `docker buildx imagetools inspect python:3.13-slim`), replace it here and
+# let CI rebuild and smoke-test the image.
+ARG PYTHON_IMAGE=python:3.13-slim@sha256:d3449c0493345868b09708d7056dce5edda3a75233ea86008fc80c934d355a10
+
+FROM ${PYTHON_IMAGE} AS builder
 ENV PIP_NO_CACHE_DIR=1 \
     PIP_DISABLE_PIP_VERSION_CHECK=1
 RUN python -m venv /opt/venv
@@ -15,7 +22,7 @@ COPY src ./src
 ARG EXTRAS="api,embeddings"
 RUN pip install ".[${EXTRAS}]"
 
-FROM python:3.13-slim AS runtime
+FROM ${PYTHON_IMAGE} AS runtime
 LABEL org.opencontainers.image.title="Citation Needed" \
       org.opencontainers.image.description="Hybrid retrieval and span-cited answers over a prebuilt index" \
       org.opencontainers.image.source="https://github.com/miguelzzzzzzzz/CitationNeeded" \

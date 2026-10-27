@@ -85,7 +85,7 @@ Short-horizon task list. Milestones and acceptance criteria live in `PLAN.md`.
 - [x] Locked first model load in the fastembed embedder/reranker + opt-in `RAG_WARMUP=off|embedder|all` (2026-10-25)
 - [x] JSON request log line per request (request id, status, `duration_ms`, `retrieve_ms`, `generate_ms`; no query text) + `X-Request-ID`; `RAG_LOG_LEVEL` (2026-10-25)
 - [x] compose binds `127.0.0.1:8000:8000`; README/Dockerfile say there is no auth (2026-10-25)
-- [ ] Pin the Docker base image by digest
+- [x] Pin the Docker base image by digest (`python:3.13-slim@sha256:d3449c04...`, multi-arch index, both stages; 2026-10-27)
 - [x] CI: `scripts/compose_smoke.sh` builds a tiny hashing index with the compose `index` service, then `docker compose up -d --wait api`, the shared smoke checks (`scripts/smoke_lib.sh`) and `docker compose down -v`; README now says compose is tested (2026-10-26, green at 17c3561)
 - [x] Extractive answers: Markdown/HTML heading lines are sentence boundaries and never quoted (was: the first sentence of a chunk included its headings, seen in the Docker smoke test); smoke tests assert it (2026-10-27)
 - [ ] v1.0.0 release notes, Chad's final REVIEW.md

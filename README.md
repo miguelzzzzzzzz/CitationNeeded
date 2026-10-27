@@ -185,7 +185,8 @@ turns off uvicorn's access log in favour of these lines.
 
 ### Docker
 
-The image (`python:3.13-slim`, multi-stage, runs as uid 10001) serves the index
+The image (`python:3.13-slim` pinned by digest in the [Dockerfile](Dockerfile),
+multi-stage, runs as uid 10001) serves the index
 mounted at `/data/index` and caches fastembed models under `/data/models`.
 Models download on first use, not at build time. With
 [compose.yaml](compose.yaml), put documents in `./corpus` and run:
