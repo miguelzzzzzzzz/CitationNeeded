@@ -6,6 +6,47 @@ All notable changes to this project are documented here. The format follows
 
 ## [Unreleased]
 
+**Draft release notes for v1.0.0. Not tagged yet: Chad must first sign off on
+the fixes from his final review at `900575f`.** When it is tagged, this section
+becomes `## [1.0.0] - <date>`.
+
+v1.0.0 completes milestones M4 to M7 on top of the v0.1.0 interface release
+(M1-M3): an evaluation harness with published SciFact results, cited answer
+generation with a code-graded answer eval, a read-only HTTP service with a
+Docker image, and hardening for running it.
+
+Highlights:
+
+- **Evaluation (M4).** `rag-engine evaluate` scores dense, lexical, hybrid and
+  hybrid+rerank at equal retrieval depth, reporting Recall/Hit@{1,5,10},
+  MRR@10, nDCG@10 and p50/p95 latency per mode to JSON reports with per-query
+  sidecars, plus paired bootstrap CIs. On SciFact test (300 queries, `BAAI/bge-small-en-v1.5`),
+  the nDCG@10 scores are: dense 0.7148, hybrid (RRF) 0.7133, lexical 0.6691 and
+  hybrid+rerank 0.6900. Hybrid and dense are about the same (hybrid − dense
+  −0.0015, 95% CI [−0.0273, +0.0239]), both beat BM25, and the reranker's drop is
+  within noise. p95 retrieval without reranking is at most 61.4 ms (hybrid) on
+  the recorded 8-CPU Linux machine, which meets the spec's 100 ms target.
+- **Answers (M5).** Extractive generator by default (no model, no network),
+  optional OpenAI-compatible client with JSON repair, `rag-engine answer`, and
+  pydantic `AnswerResponse`/`Citation` with exact character spans. A
+  code-graded run of `cline-pass/deepseek-v4.1-flash` on 30 seeded SciFact
+  claims had 29/30 valid citation spans and 8/10 correct abstentions (a lower
+  bound). The replies are cached, so the run replays offline.
+- **Service (M6).** FastAPI `GET /health`, `POST /search` and `POST /answer`
+  over a prebuilt read-only index, with a 422/400/503/502 error contract. Search
+  hits match `search --json`. The release adds a multi-stage, non-root Docker
+  image and `compose.yaml`, which CI builds and smoke-tests with both
+  `docker run` and `docker compose up --wait`.
+- **Hardening (M7).** Fastembed first loads are locked, `RAG_WARMUP` adds an
+  opt-in warm-up, and each request writes one JSON log line with `X-Request-ID`
+  and no query text. Compose binds to `127.0.0.1` only, the base image is pinned
+  by digest, and extractive quotes no longer include Markdown heading lines.
+
+Upgrading from v0.1.0: the index format (2), `search --json` (schema version 1)
+and document ids are unchanged, so v0.1.0 indexes load as they are. Extractive
+answers can differ for Markdown/HTML chunks, because heading lines are no longer
+quoted. The service has no authentication; see the README's known limitations.
+
 ### Added
 - `scripts/eval_table.py --report <file>` renders one report in detail: nDCG@10, MRR@10, Recall@{1,5,10} and Hit@{1,5,10} per mode, p50/p95 retrieval latency per mode (`n/a` where the report has no timing), and the report's hardware record verbatim. The README's SciFact tables come from its output.
 - Service hardening (M7): opt-in startup warm-up `RAG_WARMUP=off|embedder|all` (`RagService.warm_up`, run before the first request is accepted; a failed warm-up is logged and the model loads on first use); one JSON log line per request on `rag_engine.api.requests` (request id, method, path, status, `duration_ms`, `retrieve_ms`, `generate_ms`; no query text; `/health` at DEBUG) and an `X-Request-ID` response header; `RAG_LOG_LEVEL`. The Docker smoke test checks the warm-up and request log lines.
