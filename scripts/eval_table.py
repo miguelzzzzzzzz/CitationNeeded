@@ -2,7 +2,8 @@
 """Render a Markdown comparison table from committed evals/results/*.json reports.
 
 Usage:
-  python scripts/eval_table.py [results_dir]
+  python scripts/eval_table.py [results_dir]        # one summary row per report and mode
+  python scripts/eval_table.py --report REPORT.json # one report: @1/@5/@10, latency, hardware
 
 Only reads reports; never invents metrics. README tables must be copied from
 this output (or an equivalent committed report), never typed by hand.
@@ -68,6 +69,70 @@ def render(reports: list[dict[str, Any]]) -> str:
     return "\n".join(lines)
 
 
+_QUALITY_COLUMNS = (
+    ("nDCG@10", "ndcg@10"),
+    ("MRR@10", "mrr@10"),
+    ("Recall@1", "recall@1"),
+    ("Recall@5", "recall@5"),
+    ("Recall@10", "recall@10"),
+    ("Hit@1", "hit@1"),
+    ("Hit@5", "hit@5"),
+    ("Hit@10", "hit@10"),
+)
+
+
+def _fmt_ms(value: object) -> str:
+    if isinstance(value, int | float) and not isinstance(value, bool):
+        return f"{value:.1f}"
+    return "n/a"
+
+
+def _fmt_hardware(hardware: object) -> str:
+    """The report's hardware record, verbatim; empty values are shown as such."""
+    if not isinstance(hardware, dict) or not hardware:
+        return "not recorded"
+    parts = []
+    for key, value in hardware.items():
+        shown = "(empty)" if value in ("", None) else f"`{value}`"
+        parts.append(f"{key} {shown}")
+    return ", ".join(parts)
+
+
+def render_report(report: dict[str, Any], name: str) -> str:
+    """Quality (@1/@5/@10) and per-mode latency tables for a single report."""
+    metrics = report.get("metrics") or {}
+    latency = report.get("latency_ms") or {}
+    lines = [
+        "| mode | " + " | ".join(label for label, _ in _QUALITY_COLUMNS) + " |",
+        "| --- |" + " ---: |" * len(_QUALITY_COLUMNS),
+    ]
+    for mode, scores in metrics.items():
+        if not isinstance(scores, dict):
+            continue
+        cells = " | ".join(_fmt(scores.get(key, "")) for _, key in _QUALITY_COLUMNS)
+        lines.append(f"| {mode} | {cells} |")
+    lines += [
+        "",
+        "| mode | retrieve p50 (ms) | retrieve p95 (ms) |",
+        "| --- | ---: | ---: |",
+    ]
+    for mode in metrics:
+        timings = latency.get(mode) or {}
+        lines.append(
+            f"| {mode} | {_fmt_ms(timings.get('retrieve_p50'))} | "
+            f"{_fmt_ms(timings.get('retrieve_p95'))} |"
+        )
+    lines += [
+        "",
+        f"Source: `{name}` (n_queries {report.get('n_queries', '?')}, "
+        f"git_sha `{str(report.get('git_sha') or '?')[:7]}`, "
+        f"git_dirty {json.dumps(report.get('git_dirty'))}).",
+        f"Hardware as recorded in the report: {_fmt_hardware(report.get('hardware'))}.",
+        "",
+    ]
+    return "\n".join(lines)
+
+
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument(
@@ -77,7 +142,23 @@ def main(argv: list[str] | None = None) -> int:
         default=Path("evals/results"),
         help="Directory of JSON reports (default: evals/results).",
     )
+    parser.add_argument(
+        "--report",
+        type=Path,
+        help="Render one report in detail (@1/@5/@10 metrics, per-mode latency, hardware).",
+    )
     args = parser.parse_args(argv)
+    if args.report is not None:
+        try:
+            payload = json.loads(args.report.read_text(encoding="utf-8"))
+        except (OSError, json.JSONDecodeError) as exc:
+            print(f"error: cannot read {args.report}: {exc}", file=sys.stderr)
+            return 2
+        if not isinstance(payload, dict) or "metrics" not in payload:
+            print(f"error: not an eval report: {args.report}", file=sys.stderr)
+            return 2
+        sys.stdout.write(render_report(payload, args.report.name))
+        return 0
     if not args.results_dir.is_dir():
         print(f"error: not a directory: {args.results_dir}", file=sys.stderr)
         return 2

@@ -7,6 +7,7 @@ All notable changes to this project are documented here. The format follows
 ## [Unreleased]
 
 ### Added
+- `scripts/eval_table.py --report <file>` renders one report in detail: nDCG@10, MRR@10, Recall@{1,5,10} and Hit@{1,5,10} per mode, p50/p95 retrieval latency per mode (`n/a` where the report has no timing), and the report's hardware record verbatim. The README's SciFact tables come from its output.
 - Service hardening (M7): opt-in startup warm-up `RAG_WARMUP=off|embedder|all` (`RagService.warm_up`, run before the first request is accepted; a failed warm-up is logged and the model loads on first use); one JSON log line per request on `rag_engine.api.requests` (request id, method, path, status, `duration_ms`, `retrieve_ms`, `generate_ms`; no query text; `/health` at DEBUG) and an `X-Request-ID` response header; `RAG_LOG_LEVEL`. The Docker smoke test checks the warm-up and request log lines.
 
 ### Changed
