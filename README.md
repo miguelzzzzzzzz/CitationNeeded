@@ -18,7 +18,8 @@ design choice is backed by measured retrieval quality and latency.
 > Interfaces may still change before 1.0. SciFact quality numbers below come
 > from the committed fastembed report; hashing / structured reports under
 > `evals/results/` are harness/smoke checks only. Regenerate tables with
-> `python scripts/eval_table.py` — do not edit numbers by hand.
+> `python scripts/eval_table.py` (one report in detail: `--report <file>`) — do
+> not edit numbers by hand.
 
 ## Why this is not "chat with a PDF"
 
@@ -27,7 +28,7 @@ design choice is backed by measured retrieval quality and latency.
 | One loader, fixed-size chunks | Markdown/HTML/text/PDF loaders, three chunking strategies, heading-path and page metadata |
 | Top-k cosine only | Dense + BM25 hybrid with rank fusion, metadata filters, cross-encoder reranking |
 | Free-text answer | Pydantic-validated response with citations to exact character spans |
-| "It looks right" | Recall@K, MRR, Hit Rate, nDCG and per-stage latency on SciFact (BEIR) |
+| "It looks right" | Recall@K, MRR, Hit Rate, nDCG and p50/p95 latency per mode on SciFact (BEIR) |
 | Requires a paid API | Runs fully on CPU with local ONNX models; LLM is optional behind a provider interface |
 
 ## Architecture
@@ -245,14 +246,16 @@ Details: [evals/README.md](evals/README.md).
 Source: [`evals/results/scifact_test_fastembed_20261010T184148Z.json`](evals/results/scifact_test_fastembed_20261010T184148Z.json)
 (`git_dirty: false`, depth 50, 300 scored queries, embedder `BAAI/bge-small-en-v1.5`,
 fusion RRF k=60, reranker `Xenova/ms-marco-MiniLM-L-6-v2`). Chad independently
-re-ran and matched these aggregates to three decimals (2026-10-11).
+re-ran and matched these aggregates to three decimals (2026-10-11). The clean
+re-run below holds identical metrics, @1/@5 included; this table is the output
+of `python scripts/eval_table.py --report` on either report.
 
-| mode | nDCG@10 | MRR@10 | Recall@10 | Hit@10 |
-| --- | ---: | ---: | ---: | ---: |
-| dense | 0.7148 | 0.6806 | 0.8412 | 0.8567 |
-| lexical | 0.6691 | 0.6359 | 0.7908 | 0.8100 |
-| hybrid | 0.7133 | 0.6766 | 0.8446 | 0.8567 |
-| hybrid+rerank | 0.6900 | 0.6550 | 0.8252 | 0.8367 |
+| mode | nDCG@10 | MRR@10 | Recall@1 | Recall@5 | Recall@10 | Hit@1 | Hit@5 | Hit@10 |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
+| dense | 0.7148 | 0.6806 | 0.5787 | 0.7736 | 0.8412 | 0.6033 | 0.7933 | 0.8567 |
+| lexical | 0.6691 | 0.6359 | 0.5375 | 0.7259 | 0.7908 | 0.5533 | 0.7500 | 0.8100 |
+| hybrid | 0.7133 | 0.6766 | 0.5673 | 0.7728 | 0.8446 | 0.5900 | 0.7933 | 0.8567 |
+| hybrid+rerank | 0.6900 | 0.6550 | 0.5451 | 0.7385 | 0.8252 | 0.5700 | 0.7600 | 0.8367 |
 
 A clean re-run at `99f28f6` (`git_dirty: false`,
 [`scifact_test_fastembed_20261012T013527Z.json`](evals/results/scifact_test_fastembed_20261012T013527Z.json))
@@ -271,6 +274,37 @@ So **hybrid and dense are about the same** on this setup (the interval spans
 0), and the reranker's drop versus hybrid is not distinguishable from noise
 either. Dense and hybrid both beat lexical BM25 (intervals exclude 0). This is one
 dataset with one embedder, so treat it as SciFact-specific.
+
+### SciFact retrieval latency per mode
+
+From the same clean re-run at `99f28f6`
+([`scifact_test_fastembed_20261012T013527Z.json`](evals/results/scifact_test_fastembed_20261012T013527Z.json),
+300 queries; `python scripts/eval_table.py --report <file>` prints both tables
+above and this one):
+
+| mode | retrieve p50 (ms) | retrieve p95 (ms) |
+| --- | ---: | ---: |
+| dense | 23.9 | 40.1 |
+| lexical | 5.0 | 7.7 |
+| hybrid | 38.1 | 61.4 |
+| hybrid+rerank | 1477.7 | 1751.6 |
+
+Hardware as recorded in the report: platform `Linux-6.12.94+-x86_64-with-glibc2.41`,
+processor (empty), python `3.13.5`, cpu_count `8`. The report does not record
+the CPU model, and the run was on a development machine, not a CI runner (CI
+runs no models).
+
+Each timing is one query end to end: query embedding (dense and hybrid), exact
+search over 5,226 chunks, fusion, reranking of 50 candidates (hybrid+rerank),
+and collapsing hits to 10 unique documents, after one untimed warm-up per mode.
+The harness does not time stages separately or record index build time.
+
+**Spec target ([PROJECT_SPEC.md](PROJECT_SPEC.md) §8): p95 search latency
+without reranking under 100 ms. Met on this machine:** the slowest mode without
+reranking is hybrid at a p95 of 61.4 ms. Reranking is the cost to watch: the
+cross-encoder takes hybrid from a p95 of 61.4 ms to 1751.6 ms, and on SciFact
+it does not improve quality (see the CIs above). These are single-process
+timings on one machine, not a load test of the HTTP service.
 
 ### Answer generation on SciFact (M5, code-graded, small sample)
 
@@ -319,6 +353,27 @@ How to read it:
 - This is a 30-item sample: each item moves a rate by several points, and the
   intervals are wide (e.g. correct abstention [0.49, 0.94]). Treat these as a
   sanity check of the grounding pipeline, not as a model benchmark.
+
+## Known limitations
+
+- **Heading lines inside fenced code blocks (extractive answers).** For Markdown
+  and HTML chunks the extractive generator drops ATX heading lines from quotes.
+  It finds them with the loader's fence-aware scanner, but runs it on each chunk
+  on its own. A chunk that starts inside a fenced code block cannot see the
+  opening fence, so `#` comment lines in that block are taken for headings and
+  dropped, and the closing fence is read as an opening one, so real headings
+  after it can end up in a quote. Chunks that start outside a fence are handled
+  correctly.
+- **One evaluation dataset.** Retrieval quality and latency are measured on
+  SciFact only, with one embedder (`BAAI/bge-small-en-v1.5`), on one machine.
+  The structured-doc set is a smoke test.
+- **Small answer eval.** The M5 answer numbers come from 30 claims and one model
+  run; read them as a sanity check (see the intervals above).
+- **Exact search only.** Dense search scans every vector (NumPy), which is fine
+  at SciFact scale (5,226 chunks) but grows linearly with the corpus.
+- **Read-only service, no authentication.** The HTTP service serves one prebuilt
+  index; rebuilding it means restarting the service, and anyone who can reach
+  the port can query it (see [HTTP API](#http-api)).
 
 ## Development
 

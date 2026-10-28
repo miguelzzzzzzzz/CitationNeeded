@@ -26,7 +26,7 @@ Goals
 - A FastAPI service exposing search, answer, and health endpoints over a
   prebuilt index (indexing stays a batch CLI job; ADR-0007).
 - A reproducible evaluation harness reporting Recall@K, MRR@K, Hit Rate@K,
-  nDCG@10, and per-stage latency, run against a public labeled dataset.
+  nDCG@10, and p50/p95 latency per mode, run against a public labeled dataset.
 - Runs end to end on a CPU laptop with zero paid API calls.
 
 Non-goals
@@ -97,8 +97,10 @@ Key interfaces (Python `Protocol`s) keep each stage swappable and testable:
 ## 7. Evaluation methodology
 
 - Metrics: Recall@{1,5,10}, Hit Rate@{1,5,10}, MRR@10, nDCG@10 (graded by qrels),
-  plus p50/p95 latency per stage (embed query, search, fuse, rerank) and index
-  build time.
+  plus p50/p95 retrieval latency per mode. Each timing is one query end to end
+  (query embedding, search, fusion, reranking and any over-fetch), after one
+  untimed warm-up per mode. Per-stage timings and index build time are not
+  recorded by the harness.
 - Configurations compared: BM25 only, dense only, hybrid (RRF), hybrid + rerank;
   chunk size/overlap sweeps where documents are long enough to be chunked.
 - Chunk-to-document mapping: a query is credited when a retrieved chunk belongs
@@ -106,9 +108,21 @@ Key interfaces (Python `Protocol`s) keep each stage swappable and testable:
 - Every run writes a JSON report (config, dataset version, git SHA, hardware
   note, metrics) under `evals/results/`; README numbers are copied only from
   committed reports.
-- Answer faithfulness/citation precision require an LLM judge or generator; the
-  harness will be scaffolded but reported as "not run" until a provider is
-  configured. No numbers are published without an executed run.
+- Answers (M5) are graded by code, not by an LLM judge. The recorded run
+  (`evals/results/answers_scifact_test_cline-pass_deepseek-v4.1-flash_20261013T013347Z.json`,
+  2026-10-13, `git_sha` `c55a2bb`, `git_dirty: false`) asked
+  `cline-pass/deepseek-v4.1-flash` (temperature 0) about 30 SciFact test claims
+  picked with a fixed seed (0): 20 answerable claims, each with its top 5 hybrid
+  (RRF) contexts, and 10 "no relevant" claims whose qrels-gold abstracts were
+  removed from the 5 contexts. From the raw model JSON, code measures: replies
+  parsed; citation span validity (the quote is a verbatim substring of the cited
+  context and at least 20 characters); citation recall and precision against the
+  qrels gold documents; false abstention on answerable claims with gold in
+  context; and correct abstention when gold was removed (a lower bound, since
+  qrels are incomplete). The README shows each rate with its raw count and a 95%
+  Wilson interval. Every reply is cached, so `scripts/answer_eval.py --replay`
+  recomputes the grades offline. Free-text faithfulness beyond the verbatim
+  quotes is not measured, and no numbers are published without an executed run.
 
 ## 8. Success criteria
 
@@ -116,8 +130,12 @@ Key interfaces (Python `Protocol`s) keep each stage swappable and testable:
   `document.text[start:end] == chunk.text` (tested invariant).
 - Retrieval: hybrid (or hybrid + rerank) beats the better of BM25-only and
   dense-only on SciFact nDCG@10, or the README explains why it does not.
-- Latency: p95 search latency (without reranking) under 100 ms on the eval
-  corpus on a CI-class CPU; reranking cost reported separately.
+- Latency: p95 search latency (without reranking) under 100 ms on the SciFact
+  eval corpus (5,183 documents, 5,226 chunks), as measured by the eval harness on
+  the machine its report records; reranking cost reported separately. (The
+  original wording said "on a CI-class CPU", but CI runs no models, so the
+  measurement comes from the committed fastembed report instead. Status: met at
+  `99f28f6`, see the README latency table.)
 - Engineering: CI green on lint, strict typing, tests; Docker image builds in CI;
   API has request/response schemas and error-path tests.
 - Documentation: architecture, ADRs, benchmark tables generated from reports.
