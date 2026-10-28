@@ -88,4 +88,9 @@ Short-horizon task list. Milestones and acceptance criteria live in `PLAN.md`.
 - [x] Pin the Docker base image by digest (`python:3.13-slim@sha256:d3449c04...`, multi-arch index, both stages; 2026-10-27)
 - [x] CI: `scripts/compose_smoke.sh` builds a tiny hashing index with the compose `index` service, then `docker compose up -d --wait api`, the shared smoke checks (`scripts/smoke_lib.sh`) and `docker compose down -v`; README now says compose is tested (2026-10-26, green at 17c3561)
 - [x] Extractive answers: Markdown/HTML heading lines are sentence boundaries and never quoted (was: the first sentence of a chunk included its headings, seen in the Docker smoke test); smoke tests assert it (2026-10-27)
-- [ ] v1.0.0 release notes, Chad's final REVIEW.md
+- [x] Chad's final review at `900575f` (2026-10-27): 0 CRITICAL, 1 MAJOR, 2 MINOR, resolved in aa1427b/ff1619c and recorded in REVIEW.md
+  - [x] README per-mode latency table from the `99f28f6` report with its recorded hardware; spec §8 p95 < 100 ms target met (hybrid p95 61.4 ms); @1/@5 metrics in the quality table (`scripts/eval_table.py --report`)
+  - [x] PROJECT_SPEC §7 describes the code-graded M5 answer run and what the latency numbers cover
+  - [x] README known limitations, including the fenced-code heading limitation of extractive answers
+- [ ] Chad re-checks the fixes and signs off
+- [ ] v1.0.0 release notes (draft in CHANGELOG), then tag

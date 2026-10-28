@@ -135,3 +135,56 @@ Resolution, [`9f236ba`](https://github.com/miguelzzzzzzzz/CitationNeeded/commit/
 - The report `schema_version` is now 2. The committed hashing smoke reports
   were regenerated at `e718f74` with the new schema and a clean tree.
 
+
+## Chad's final review at `900575f` (2026-10-27)
+
+Scope: the whole project before v1.0.0 (M1–M7). Result: 0 CRITICAL, 1 MAJOR,
+2 MINOR. All three are resolved; Chad's re-check of the fixes is pending, and
+v1.0.0 is not tagged until he signs off.
+
+### MAJOR: the README has no latency numbers, and the spec's latency target is unchecked
+
+PROJECT_SPEC §8 sets a target of p95 search latency under 100 ms without
+reranking, and the README promised "per-stage latency", but no latency table
+was published even though the committed SciFact report records it. The harness
+times each query end to end per mode, not per stage. The README results table
+also showed only the @10 metrics, though the reports have @1 and @5.
+
+Resolution, [`aa1427b`](https://github.com/miguelzzzzzzzz/CitationNeeded/commit/aa1427b)
+and [`ff1619c`](https://github.com/miguelzzzzzzzz/CitationNeeded/commit/ff1619c):
+
+- `scripts/eval_table.py --report <file>` renders one report: nDCG@10, MRR@10,
+  Recall@{1,5,10} and Hit@{1,5,10} per mode, a p50/p95 retrieval latency table
+  per mode (`n/a` where a mode has no timing), and the report's hardware record
+  verbatim. `tests/test_eval_table.py` covers it, including a run on the
+  committed report.
+- The README's SciFact quality table now has the @1 and @5 columns, from that
+  output. Both fastembed reports hold identical metrics.
+- New README section "SciFact retrieval latency per mode", from
+  `scifact_test_fastembed_20261012T013527Z.json` (`99f28f6`, `git_dirty:
+  false`, 300 queries). Its p95 values are dense 40.1 ms, lexical 7.7 ms, hybrid
+  61.4 ms and hybrid+rerank 1751.6 ms. The hardware is stated as the report
+  records it: platform `Linux-6.12.94+-x86_64-with-glibc2.41`, processor
+  empty, python `3.13.5`, cpu_count `8`. The section also says that the report
+  has no CPU model and that the run was not on a CI runner.
+- The §8 target is **met** on that machine: the slowest mode without reranking
+  is hybrid at a p95 of 61.4 ms. §8 no longer says "on a CI-class CPU", because
+  CI runs no models. It now names the corpus and points to the harness
+  measurement on the machine the report records.
+- "Per-stage latency" now reads "latency per mode" in the README and in the
+  spec's goals. The README and spec §7 say what one timing covers and that stage
+  timings and index build time are not recorded.
+
+### MINOR findings
+
+| Finding | Resolution |
+| --- | --- |
+| PROJECT_SPEC §7 still said answer quality would be "not run" until a provider was configured | §7 now describes the recorded M5 run: 30 seeded SciFact claims (20 answerable, 10 with gold removed), `cline-pass/deepseek-v4.1-flash` at temperature 0, `c55a2bb`, graded by code only (parse rate, span validity with the 20-character minimum, citation recall/precision vs qrels gold, false and correct abstention), Wilson intervals, and offline replay from the cache ([`ff1619c`](https://github.com/miguelzzzzzzzz/CitationNeeded/commit/ff1619c)). |
+| The README does not list the fenced-code limitation of heading stripping | New "Known limitations" section in the README. Its first entry: the extractive generator scans each chunk on its own, so a chunk that starts inside a fenced code block takes `#` comment lines in it for headings, reads the closing fence as an opening one, and can then quote a real heading after it. Checked on the box before writing it up. The section also lists one eval dataset, the 30-claim answer eval, exact (linear) dense search and the unauthenticated read-only service ([`ff1619c`](https://github.com/miguelzzzzzzzz/CitationNeeded/commit/ff1619c)). |
+
+### For the re-check
+
+- The README latency table and the @1/@5 columns should match
+  `python scripts/eval_table.py --report evals/results/scifact_test_fastembed_20261012T013527Z.json`.
+- Is the §8 rewording (machine recorded in the report, not a CI-class CPU)
+  acceptable, or should the target stay as written and be marked unverified?
