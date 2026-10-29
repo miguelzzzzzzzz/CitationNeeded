@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "production-rag-engine"
-version = "0.1.0"
+version = "1.0.0"
 description = "Production-style RAG engine: structure-aware chunking, hybrid retrieval, reranking, cited answers, and reproducible retrieval evals."
 readme = "README.md"
 requires-python = ">=3.11"

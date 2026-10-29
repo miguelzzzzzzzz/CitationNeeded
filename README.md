@@ -11,12 +11,11 @@ index, so every citation can be re-checked); hybrid dense + BM25 retrieval with 
 schema-validated answers; and a reproducible evaluation harness so every
 design choice is backed by measured retrieval quality and latency.
 
-> **Status:** v0.1.0, a pre-1.0 interface release (see [PLAN.md](PLAN.md) and
-> [CHANGELOG.md](CHANGELOG.md)). M1–M6 (ingestion through cited answer
-> generation and the HTTP service with its Docker image) are done; M1–M3 passed
-> interface review ([REVIEW.md](REVIEW.md)).
-> Interfaces may still change before 1.0. SciFact quality numbers below come
-> from the committed fastembed report; hashing / structured reports under
+> **Status:** v1.0.0 (see [PLAN.md](PLAN.md) and
+> [CHANGELOG.md](CHANGELOG.md)). M1–M7 (ingestion through cited answer
+> generation, the HTTP service with its Docker image, and hardening) are done,
+> and the project passed its final review ([REVIEW.md](REVIEW.md)). SciFact
+> quality numbers below come from the committed fastembed report; hashing / structured reports under
 > `evals/results/` are harness/smoke checks only. Regenerate tables with
 > `python scripts/eval_table.py` (one report in detail: `--report <file>`) — do
 > not edit numbers by hand.
@@ -292,7 +291,9 @@ above and this one):
 Hardware as recorded in the report: platform `Linux-6.12.94+-x86_64-with-glibc2.41`,
 processor (empty), python `3.13.5`, cpu_count `8`. The report does not record
 the CPU model, and the run was on a development machine, not a CI runner (CI
-runs no models).
+runs no models). That machine is a VM shared with other bots, so these timings
+can vary with its load; treat them as one run on a shared VM, not a controlled
+benchmark.
 
 Each timing is one query end to end: query embedding (dense and hybrid), exact
 search over 5,226 chunks, fusion, reranking of 50 candidates (hybrid+rerank),
@@ -365,7 +366,8 @@ How to read it:
   after it can end up in a quote. Chunks that start outside a fence are handled
   correctly.
 - **One evaluation dataset.** Retrieval quality and latency are measured on
-  SciFact only, with one embedder (`BAAI/bge-small-en-v1.5`), on one machine.
+  SciFact only, with one embedder (`BAAI/bge-small-en-v1.5`), on one machine
+  (a VM shared with other bots, so latency can vary with load).
   The structured-doc set is a smoke test.
 - **Small answer eval.** The M5 answer numbers come from 30 claims and one model
   run; read them as a sanity check (see the intervals above).

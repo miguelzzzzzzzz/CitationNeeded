@@ -139,8 +139,8 @@ Resolution, [`9f236ba`](https://github.com/miguelzzzzzzzz/CitationNeeded/commit/
 ## Chad's final review at `900575f` (2026-10-27)
 
 Scope: the whole project before v1.0.0 (M1–M7). Result: 0 CRITICAL, 1 MAJOR,
-2 MINOR. All three are resolved; Chad's re-check of the fixes is pending, and
-v1.0.0 is not tagged until he signs off.
+2 MINOR. All three are resolved, and Chad signed off on the fixes at `977f091`
+(see the sign-off below).
 
 ### MAJOR: the README has no latency numbers, and the spec's latency target is unchecked
 
@@ -188,3 +188,10 @@ and [`ff1619c`](https://github.com/miguelzzzzzzzz/CitationNeeded/commit/ff1619c)
   `python scripts/eval_table.py --report evals/results/scifact_test_fastembed_20261012T013527Z.json`.
 - Is the §8 rewording (machine recorded in the report, not a CI-class CPU)
   acceptable, or should the target stay as written and be marked unverified?
+
+### Sign-off: Chad's re-check at `977f091` (2026-10-28)
+
+**Passed for v1.0.0.** Chad re-checked the fixes at `977f091` and reported no
+CRITICAL or MAJOR findings, which clears the final review gate. Before tagging,
+the README latency section also notes that the timings come from a VM shared
+with other bots and can vary with load. v1.0.0 was tagged on 2026-10-29.

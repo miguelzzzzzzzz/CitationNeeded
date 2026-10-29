@@ -81,7 +81,7 @@ Short-horizon task list. Milestones and acceptance criteria live in `PLAN.md`.
 - [x] CI `docker` job: image build, compose config check, `scripts/docker_smoke.sh`
 - [x] `POST /ingest` dropped from M6: indexing stays a batch job (ADR-0007)
 
-## M7 - Hardening and release (in progress)
+## M7 - Hardening and release (done 2026-10-29, v1.0.0)
 - [x] Locked first model load in the fastembed embedder/reranker + opt-in `RAG_WARMUP=off|embedder|all` (2026-10-25)
 - [x] JSON request log line per request (request id, status, `duration_ms`, `retrieve_ms`, `generate_ms`; no query text) + `X-Request-ID`; `RAG_LOG_LEVEL` (2026-10-25)
 - [x] compose binds `127.0.0.1:8000:8000`; README/Dockerfile say there is no auth (2026-10-25)
@@ -92,5 +92,5 @@ Short-horizon task list. Milestones and acceptance criteria live in `PLAN.md`.
   - [x] README per-mode latency table from the `99f28f6` report with its recorded hardware; spec §8 p95 < 100 ms target met (hybrid p95 61.4 ms); @1/@5 metrics in the quality table (`scripts/eval_table.py --report`)
   - [x] PROJECT_SPEC §7 describes the code-graded M5 answer run and what the latency numbers cover
   - [x] README known limitations, including the fenced-code heading limitation of extractive answers
-- [ ] Chad re-checks the fixes and signs off
-- [ ] v1.0.0 release notes (draft in CHANGELOG), then tag
+- [x] Chad re-checks the fixes at `977f091` and signs off (2026-10-28, no CRITICAL or MAJOR findings)
+- [x] v1.0.0: README note that latency was measured on a shared VM, version 1.0.0 in `pyproject.toml`/`__version__` (with a test that they match), CHANGELOG `[1.0.0] - 2026-10-29`, tag `v1.0.0` (2026-10-29)

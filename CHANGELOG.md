@@ -6,9 +6,7 @@ All notable changes to this project are documented here. The format follows
 
 ## [Unreleased]
 
-**Draft release notes for v1.0.0. Not tagged yet: Chad must first sign off on
-the fixes from his final review at `900575f`.** When it is tagged, this section
-becomes `## [1.0.0] - <date>`.
+## [1.0.0] - 2026-10-29
 
 v1.0.0 completes milestones M4 to M7 on top of the v0.1.0 interface release
 (M1-M3): an evaluation harness with published SciFact results, cited answer
@@ -52,6 +50,7 @@ quoted. The service has no authentication; see the README's known limitations.
 - Service hardening (M7): opt-in startup warm-up `RAG_WARMUP=off|embedder|all` (`RagService.warm_up`, run before the first request is accepted; a failed warm-up is logged and the model loads on first use); one JSON log line per request on `rag_engine.api.requests` (request id, method, path, status, `duration_ms`, `retrieve_ms`, `generate_ms`; no query text; `/health` at DEBUG) and an `X-Request-ID` response header; `RAG_LOG_LEVEL`. The Docker smoke test checks the warm-up and request log lines.
 
 ### Changed
+- Version 1.0.0 in `pyproject.toml` and `rag_engine.__version__` (reported by `/health` and the OpenAPI schema); a test keeps the two in sync. The README notes that the latency numbers were measured on a VM shared with other bots and can vary with its load.
 - Docs (Chad's final review at `900575f`): the README adds Recall/Hit@1 and @5 to the SciFact quality table, a per-mode p50/p95 latency table from the `99f28f6` report with its recorded hardware, and a known-limitations section (including that heading stripping in extractive answers cannot see a fence opened before the chunk starts). "Per-stage latency" now reads "latency per mode", since the harness times each query end to end. PROJECT_SPEC §7 describes the code-graded M5 answer run as it was run; §8's p95 < 100 ms target (without reranking) is now measured on the machine the report records instead of "a CI-class CPU" (CI runs no models), and it is met: hybrid p95 61.4 ms, dense 40.1 ms, lexical 7.7 ms.
 - The Dockerfile pins its base image by the digest of the `python:3.13-slim` multi-arch index (`PYTHON_IMAGE` build arg, resolved 2026-10-27) for both stages, so rebuilds use the same OS and Python layers; the Dockerfile says how to refresh it.
 - The CI `docker` job also runs `scripts/compose_smoke.sh`: `docker compose run --rm index` builds a hashing-embedder index of `evals/structured/docs` (no model downloads) before `docker compose up -d --wait api` (the healthcheck is 503 until an index is served), checks that the API is published on `127.0.0.1:8000` with a read-only root filesystem and a read-only index mount, runs the same HTTP checks as the `docker run` smoke test (now shared in `scripts/smoke_lib.sh`), then `docker compose down -v`. `compose.yaml` takes the image name from `RAG_IMAGE` (default `citation-needed:local`).
@@ -145,5 +144,6 @@ stage's rank in `ranks` instead of a `base_rank` score key. Always pass
 - Chunking overrides on the command line no longer reset `RAG_EMBEDDING_*` (and other non-chunking) settings to defaults.
 - Dense retrieval returns no hits for a query whose embedding is all zeros instead of an arbitrary list of zero-score chunks.
 
-[Unreleased]: https://github.com/miguelzzzzzzzz/CitationNeeded/compare/v0.1.0...HEAD
+[Unreleased]: https://github.com/miguelzzzzzzzz/CitationNeeded/compare/v1.0.0...HEAD
+[1.0.0]: https://github.com/miguelzzzzzzzz/CitationNeeded/compare/v0.1.0...v1.0.0
 [0.1.0]: https://github.com/miguelzzzzzzzz/CitationNeeded/releases/tag/v0.1.0
